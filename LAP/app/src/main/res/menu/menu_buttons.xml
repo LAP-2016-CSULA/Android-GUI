@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_tree"
+        android:icon="@drawable/ic_tree_48dp"
+        android:title="@string/action_tree"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/action_bird"
+        android:icon="@drawable/ic_bird_48dp"
+        android:title="@string/action_bird"
+        app:showAsAction="always"/>
+
+    <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        app:showAsAction="never"/>
+
+</menu>
