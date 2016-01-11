@@ -1,21 +1,5 @@
 package com.example.romsm.lap;
 
-/*
- * Copyright (C) 2012 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -23,16 +7,27 @@ import com.google.android.gms.maps.SupportMapFragment;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * This demo shows how GMS Location can be used to check for changes to the users location.  The
@@ -61,11 +56,17 @@ public class MapsActivity extends AppCompatActivity
 
     private GoogleMap mMap;
 
+    private UserAccount user;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         Intent intent = getIntent();
+        user = (UserAccount)intent.getSerializableExtra("userTokens");
+        Log.i(Constants.TAG, user.getAccessToken());
+
+        Toast.makeText(this, "Hello, "+intent.getStringExtra("username"), Toast.LENGTH_LONG).show();
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -142,6 +143,8 @@ public class MapsActivity extends AppCompatActivity
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
+
+
     // Initiating Menu XML file (menu.xml)
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -154,9 +157,8 @@ public class MapsActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_settings:
-                // User chose the "Settings" item, show the app settings UI...
-                Toast.makeText(this, "Settings is Selected", Toast.LENGTH_SHORT).show();
+            case R.id.action_logout:
+                new UserLogoutTask().execute();
                 return true;
 
             case R.id.action_bird:
@@ -175,4 +177,81 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Represents an asynchronous logout task used to revoke the access token and logout
+     * the user.
+     */
+    public class UserLogoutTask extends AsyncTask<Void, Void, Boolean> {
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+            try {
+                URL url = new URL(Constants.REVOKE_TOKEN_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                Uri.Builder builder = new Uri.Builder()
+                        .appendQueryParameter("token", user.getAccessToken())
+                        .appendQueryParameter("client_id", Constants.CLIENT_ID)
+                        .appendQueryParameter("client_secret", Constants.CLIENT_SECRET);
+                String query = builder.build().getEncodedQuery();
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(query);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "logout status " + status);
+
+                if (status == 200) {
+                    return true;
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+
+            try {
+                // Simulate network access.
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                return false;
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                Toast.makeText(MapsActivity.this, "Successfully logged out", Toast.LENGTH_LONG).show();
+                Intent LoginIntent = new Intent(MapsActivity.this, LoginActivity.class);
+                startActivity(LoginIntent);
+                finish();
+            } else {
+                Toast.makeText(MapsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+
+            }
+        }
+    }
 }

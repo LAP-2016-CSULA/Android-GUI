@@ -4,50 +4,39 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.app.LoaderManager.LoaderCallbacks;
-
-import android.content.CursorLoader;
-import android.content.Loader;
-import android.database.Cursor;
 import android.net.Uri;
+import android.support.v7.app.AppCompatActivity;
 import android.os.AsyncTask;
-
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.json.JSONException;
 
-import static android.Manifest.permission.READ_CONTACTS;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity {
-
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "user:pass", "a:a"
-    };
-
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -183,14 +172,80 @@ public class LoginActivity extends AppCompatActivity {
         private final String mUsername;
         private final String mPassword;
 
+        UserAccount user;
+
+        HttpURLConnection conn = null;
+
         UserLoginTask(String username, String password) {
             mUsername = username;
             mPassword = password;
         }
 
+        
         @Override
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
+            try {
+                URL url = new URL(Constants.ACCESS_TOKEN_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                Uri.Builder builder = new Uri.Builder()
+                        .appendQueryParameter("grant_type", "password")
+                        .appendQueryParameter("username", mUsername)
+                        .appendQueryParameter("password", mPassword)
+                        .appendQueryParameter("scope", "read")
+                        .appendQueryParameter("client_id", Constants.CLIENT_ID)
+                        .appendQueryParameter("client_secret", Constants.CLIENT_SECRET);
+                String query = builder.build().getEncodedQuery();
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(query);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "login status " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String tokenData = sb.toString();
+                    user = new UserAccount(tokenData);
+                    Log.d(Constants.TAG, tokenData);
+                    return true;
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            }catch (JSONException e){
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
 
             try {
                 // Simulate network access.
@@ -198,15 +253,6 @@ public class LoginActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 return false;
             }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mUsername)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
             return false;
         }
 
@@ -216,8 +262,10 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
 
             if (success) {
-                Intent intent = new Intent(LoginActivity.this, MapsActivity.class);
-                startActivity(intent);
+                Intent mapIntent = new Intent(LoginActivity.this, MapsActivity.class);
+                mapIntent.putExtra("userTokens", user);
+                mapIntent.putExtra("username", mUsername);
+                startActivity(mapIntent);
                 finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
