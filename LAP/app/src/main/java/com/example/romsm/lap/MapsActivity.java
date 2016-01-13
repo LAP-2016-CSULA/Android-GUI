@@ -1,12 +1,19 @@
 package com.example.romsm.lap;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -63,10 +70,10 @@ public class MapsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         Intent intent = getIntent();
-        user = (UserAccount)intent.getSerializableExtra("userTokens");
+        user = (UserAccount) intent.getSerializableExtra("userTokens");
         Log.i(Constants.TAG, user.getAccessToken());
 
-        Toast.makeText(this, "Hello, "+intent.getStringExtra("username"), Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Hello, " + intent.getStringExtra("username"), Toast.LENGTH_LONG).show();
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -94,9 +101,36 @@ public class MapsActivity extends AppCompatActivity
             PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
                     Manifest.permission.ACCESS_FINE_LOCATION, true);
         } else if (mMap != null) {
-            // Access to the location has been granted to the app.
+            // Access to the location has been granted to the app
             mMap.setMyLocationEnabled(true);
+            setUpMap();
+            }
         }
+
+    private void setUpMap() {
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        String provider = locationManager.getBestProvider(criteria, true);
+
+        Location mylocation = locationManager.getLastKnownLocation(provider);
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        if (mylocation != null) {
+            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+            double latitude = mylocation.getLatitude();
+            double longitude = mylocation.getLongitude();
+            LatLng latlng = new LatLng(latitude, longitude);
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(20));
+          //  mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("You Are Here"));
+
+        }
+
     }
 
     @Override
