@@ -7,11 +7,14 @@
         app:showAsAction="always"/>
     <item
         android:id="@+id/action_bird"
-        android:icon="@drawable/ic_bird_48dp"
+        android:icon="@drawable/ic_bird_gray_48dp"
         android:title="@string/action_bird"
         app:showAsAction="always"/>
 
     <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_user"
+        android:title=""
+        app:showAsAction="never"/>
     <item android:id="@+id/action_logout"
         android:title="@string/action_logout"
         app:showAsAction="never"/>

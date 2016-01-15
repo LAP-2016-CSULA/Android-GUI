@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.AsyncTask;
@@ -34,7 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * A login screen that offers login via email/password.
+ * A login screen that offers login via username/password.
  */
 public class LoginActivity extends AppCompatActivity {
     /**
@@ -47,6 +48,13 @@ public class LoginActivity extends AppCompatActivity {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+
+    //Will contain user's tokens
+    UserAccount user;
+    String access_token;
+    String refresh_token;
+
+    private boolean isLoggedIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +85,47 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        //Get saved tokens if any
+        getSharedPref();
+        //Start map activity if previous tokens found
+        if(access_token !=null && refresh_token != null) {
+            isLoggedIn = true;
+            showProgress(true);
+            user = new UserAccount(access_token, refresh_token);
+            new GetUserInfoTask().execute();
+            /*
+            user = new UserAccount(access_token, refresh_token);
+            Intent mapIntent = new Intent(LoginActivity.this, MapsActivity.class);
+            mapIntent.putExtra("userTokens", user);
+            startActivity(mapIntent);
+            finish();
+            */
+        }
+    }
+
+    /**
+     * Gets access token and refresh token
+     */
+    private void getSharedPref(){
+        SharedPreferences settings = getSharedPreferences("tokens", 0);
+        access_token = settings.getString("accessToken", null);
+        refresh_token= settings.getString("refreshToken", null);
+
+        //debug
+        Log.i(Constants.TAG, "Access: "+access_token);
+        Log.i(Constants.TAG, "Refresh: "+refresh_token);
+    }
+
+    /**
+     *  Saves the access tokens and refresh tokens as sharedpreferences
+     */
+    private void setTokensAsSharedPref(String accessToken, String refreshToken){
+        SharedPreferences settings = getSharedPreferences("tokens", 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("accessToken", accessToken);
+        editor.putString("refreshToken", refreshToken);
+        editor.commit();
     }
 
     /**
@@ -172,8 +221,6 @@ public class LoginActivity extends AppCompatActivity {
         private final String mUsername;
         private final String mPassword;
 
-        UserAccount user;
-
         HttpURLConnection conn = null;
 
         UserLoginTask(String username, String password) {
@@ -227,7 +274,92 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     String tokenData = sb.toString();
                     user = new UserAccount(tokenData);
+                    user.setUsername(mUsername);
                     Log.d(Constants.TAG, tokenData);
+                    Log.d(Constants.TAG, "access:"+user.getAccessToken());
+                    return true;
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            }catch (JSONException e){
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask = null;
+            //showProgress(false);
+
+            if (success) {
+                //setTokensAsSharedPref(user.getAccessToken(), user.getRefreshToken());
+                new GetUserInfoTask().execute();
+                //Intent mapIntent = new Intent(LoginActivity.this, MapsActivity.class);
+                //mapIntent.putExtra("userTokens", user);
+                //mapIntent.putExtra("username", mUsername);
+                //startActivity(mapIntent);
+                //finish();
+            } else {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_incorrect_username));
+                mPasswordView.setError(getString(R.string.error_incorrect_password));
+                mUsernameView.requestFocus();
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            showProgress(false);
+        }
+    }
+
+    /**
+     * AsynTask used after getting tokens used to get users info such as username
+     */
+    public class GetUserInfoTask extends AsyncTask<Void, Void, Boolean> {
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+            getNewAccessToken(user.getRefreshToken());
+            try {
+                URL url = new URL(Constants.GET_USER_INFO_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("client_id", Constants.CLIENT_ID);
+                conn.setRequestProperty("client_secret", Constants.CLIENT_SECRET);
+                conn.setRequestProperty("Authorization", "Bearer " + user.getAccessToken());
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "userinfo status " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String userInfoData = sb.toString();
+
+                    user.setUserInfo(userInfoData);
+                    Log.d(Constants.TAG, userInfoData);
                     return true;
                 }
             }catch (MalformedURLException e){
@@ -247,29 +379,20 @@ public class LoginActivity extends AppCompatActivity {
                     conn.disconnect();
             }
 
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
             return false;
         }
 
         @Override
         protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
             showProgress(false);
-
             if (success) {
+                setTokensAsSharedPref(user.getAccessToken(), user.getRefreshToken());
                 Intent mapIntent = new Intent(LoginActivity.this, MapsActivity.class);
                 mapIntent.putExtra("userTokens", user);
-                mapIntent.putExtra("username", mUsername);
                 startActivity(mapIntent);
                 finish();
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
+
             }
         }
 
@@ -277,6 +400,64 @@ public class LoginActivity extends AppCompatActivity {
         protected void onCancelled() {
             mAuthTask = null;
             showProgress(false);
+        }
+
+        private void getNewAccessToken(String refreshToken){
+            try {
+                URL url = new URL(Constants.ACCESS_TOKEN_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                Uri.Builder builder = new Uri.Builder()
+                        .appendQueryParameter("grant_type", "refresh_token")
+                        .appendQueryParameter("client_id", Constants.CLIENT_ID)
+                        .appendQueryParameter("client_secret", Constants.CLIENT_SECRET)
+                        .appendQueryParameter("refresh_token", refreshToken);
+                String query = builder.build().getEncodedQuery();
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(query);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "refresh status " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String tokenData = sb.toString();
+                    user.setTokens(tokenData);
+                    Log.d(Constants.TAG, tokenData);
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+            }catch (JSONException e){
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
         }
     }
 }

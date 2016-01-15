@@ -5,11 +5,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -65,15 +69,17 @@ public class MapsActivity extends AppCompatActivity
 
     private UserAccount user;
 
+    private String modeSelected = "tree";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
-        Log.i(Constants.TAG, user.getAccessToken());
+        Log.i(Constants.TAG, user.getAccessToken()+"");
 
-        Toast.makeText(this, "Hello, " + intent.getStringExtra("username"), Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Hello, " + user.getUsername(), Toast.LENGTH_LONG).show();
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -81,16 +87,53 @@ public class MapsActivity extends AppCompatActivity
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
 
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
 
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+                if (modeSelected.equals("tree")){
+                    final LatLng location = latLng;
+                    //Show dialog asking user if they want to add a tree
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User clicked OK button
+
+                            //Uncomment below to switch to Tree List Activity
+                            /*Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
+                            startActivity(listIntent);*/
+
+                            //adds tree marker
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(location)
+                                    .title("Tree")
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
+                        }
+                    });
+                    builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User cancelled the dialog
+                        }
+                    });
+                    builder.setMessage(R.string.add_tree_here)
+                            .setTitle(R.string.app_name);
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
+            }
+        });
+
+
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
     }
-
     /**
      * Enables the My Location layer if the fine location permission has been granted.
      */
@@ -180,11 +223,15 @@ public class MapsActivity extends AppCompatActivity
 
 
     // Initiating Menu XML file (menu.xml)
+    private Menu menu;
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.menu_buttons, menu);
+        this.menu = menu;
+        MenuItem usernameItem = menu.findItem(R.id.action_user);
+        usernameItem.setTitle(user.getUsername()+" : " + ((user.getIsStaff() == true) ? "Admin" : "User"));
         return true;
     }
 
@@ -196,11 +243,13 @@ public class MapsActivity extends AppCompatActivity
                 return true;
 
             case R.id.action_bird:
-                Toast.makeText(this, "Bird is Selected", Toast.LENGTH_SHORT).show();
+                modeSelected = "bird";
+                changeItemsIcon(item);
                 return true;
 
             case R.id.action_tree:
-                Toast.makeText(this, "Tree is Selected", Toast.LENGTH_SHORT).show();
+                modeSelected = "tree";
+                changeItemsIcon(item);
                 return true;
 
             default:
@@ -208,6 +257,20 @@ public class MapsActivity extends AppCompatActivity
                 // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
 
+        }
+    }
+
+    //changes icon of selected option item
+    public void changeItemsIcon(MenuItem item){
+        if(modeSelected.equals("tree")){
+            item.setIcon(R.drawable.ic_tree_48dp);
+            MenuItem birdItem = menu.findItem(R.id.action_bird);
+            birdItem.setIcon(R.drawable.ic_bird_gray_48dp);
+        }
+        else if(modeSelected.equals("bird")){
+            item.setIcon(R.drawable.ic_bird_48dp);
+            MenuItem treeItem = menu.findItem(R.id.action_tree);
+            treeItem.setIcon(R.drawable.ic_tree_gray_48dp);
         }
     }
 
@@ -221,7 +284,10 @@ public class MapsActivity extends AppCompatActivity
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
+            return revokeToken(user.getAccessToken());
+        }
+
+        protected Boolean revokeToken(String token){
             try {
                 URL url = new URL(Constants.REVOKE_TOKEN_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -232,7 +298,7 @@ public class MapsActivity extends AppCompatActivity
                 conn.setDoOutput(true);
 
                 Uri.Builder builder = new Uri.Builder()
-                        .appendQueryParameter("token", user.getAccessToken())
+                        .appendQueryParameter("token", token)
                         .appendQueryParameter("client_id", Constants.CLIENT_ID)
                         .appendQueryParameter("client_secret", Constants.CLIENT_SECRET);
                 String query = builder.build().getEncodedQuery();
@@ -248,7 +314,7 @@ public class MapsActivity extends AppCompatActivity
                 conn.connect();
 
                 int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "logout status " + status);
+                Log.d(Constants.TAG, "logout status " + token +" : " + status);
 
                 if (status == 200) {
                     return true;
@@ -279,6 +345,13 @@ public class MapsActivity extends AppCompatActivity
         protected void onPostExecute(final Boolean success) {
             if (success) {
                 Toast.makeText(MapsActivity.this, "Successfully logged out", Toast.LENGTH_LONG).show();
+
+                //clear tokens from shared preferences
+                SharedPreferences settings = getSharedPreferences("tokens", 0);
+                SharedPreferences.Editor editor = settings.edit();
+                editor.clear();
+                editor.commit();
+
                 Intent LoginIntent = new Intent(MapsActivity.this, LoginActivity.class);
                 startActivity(LoginIntent);
                 finish();
