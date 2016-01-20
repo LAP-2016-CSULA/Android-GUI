@@ -15,6 +15,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -71,10 +72,13 @@ public class MapsActivity extends AppCompatActivity
 
     private String modeSelected = "tree";
 
+    Cursor cursor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         Log.i(Constants.TAG, user.getAccessToken()+"");
@@ -90,10 +94,33 @@ public class MapsActivity extends AppCompatActivity
 
     }
 
+    private void setUpDbMarkers(){
+        MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
+        cursor = dbHelper.getAllRows();
+
+        cursor.moveToFirst();
+        Log.d(Constants.TAG, "cursor is after last? : " + cursor.isAfterLast());
+        while (!cursor.isAfterLast()) {
+            String latitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LATITUDE));
+            String longitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LONGITUDE));
+            Double l1 = Double.parseDouble(latitude);
+            Double l2 = Double.parseDouble(longitude);
+
+            Log.d(Constants.TAG, latitude + " " + longitude);
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(l1, l2))
+                    .title("Tree")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+    }
+
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
-
+        setUpDbMarkers();
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
             @Override
@@ -107,8 +134,13 @@ public class MapsActivity extends AppCompatActivity
                             // User clicked OK button
 
                             //Uncomment below to switch to Tree List Activity
-                            /*Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
-                            startActivity(listIntent);*/
+                            Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
+                            listIntent.putExtra("userTokens", user);
+                            double l1=location.latitude;
+                            double l2=location.longitude;
+                            listIntent.putExtra("lat", l1);
+                            listIntent.putExtra("long", l2);
+                            startActivity(listIntent);
 
                             //adds tree marker
                             mMap.addMarker(new MarkerOptions()
@@ -212,6 +244,11 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
+
     /**
      * Displays a dialog with error message explaining that the location permission is missing.
      */
@@ -250,6 +287,17 @@ public class MapsActivity extends AppCompatActivity
             case R.id.action_tree:
                 modeSelected = "tree";
                 changeItemsIcon(item);
+                return true;
+
+            case R.id.action_user:
+                //debug: remove trees
+                MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
+                dbHelper.clearTable();
+                dbHelper.close();
+                //restart activity
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
                 return true;
 
             default:
