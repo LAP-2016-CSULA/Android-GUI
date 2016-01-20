@@ -53,7 +53,7 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
             String name = json_data.getString("name");
             String sciName = json_data.getString("scientific_name");
             String desc = json_data.getString("description");
-            if(type == 1){ //type 1 = tree
+            if(type == 1){//type 1 = tree
                 speciesList.add(new TreeSpecies(name, sciName, desc, id));
             }
 
@@ -70,14 +70,20 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-                Object o = lv.getItemAtPosition(position);
-                Log.d(Constants.TAG, o.toString());
-
+                TreeSpecies tree = (TreeSpecies)lv.getItemAtPosition(position);
+                Log.d(Constants.TAG, tree.toString());
+                Intent infoIntent = new Intent(TreeSpeciesListActivity.this, TreeInfoActivity.class);
+                infoIntent.putExtra("userTokens", user);
+                infoIntent.putExtra("tree", tree);
+                infoIntent.putExtra("lat",l1);
+                infoIntent.putExtra("long", l2);
+                startActivity(infoIntent);
+                /*
                 Intent questionsIntent = new Intent(TreeSpeciesListActivity.this, TreeQuestionsActivity.class);
                 questionsIntent.putExtra("userTokens", user);
                 questionsIntent.putExtra("lat",l1);
                 questionsIntent.putExtra("long", l2);
-                startActivity(questionsIntent);
+                startActivity(questionsIntent);*/
             }
         });
     }

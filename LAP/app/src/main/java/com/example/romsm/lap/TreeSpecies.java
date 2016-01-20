@@ -1,6 +1,8 @@
 package com.example.romsm.lap;
 
-public class TreeSpecies {
+import java.io.Serializable;
+
+public class TreeSpecies implements Serializable {
     private String name, scientificName, descrition;
     private int id;
 

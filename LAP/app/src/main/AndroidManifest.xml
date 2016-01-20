@@ -41,8 +41,9 @@
         <activity
             android:name=".MapsActivity"
             android:label="@string/app_name" />
-        <activity android:name=".TreeSpeciesListActivity"></activity>
-        <activity android:name=".TreeQuestionsActivity"></activity>
+        <activity android:name=".TreeSpeciesListActivity" />
+        <activity android:name=".TreeQuestionsActivity" />
+        <activity android:name=".TreeInfoActivity"></activity>
     </application>
 
 </manifest>
