@@ -5,36 +5,49 @@ package com.example.romsm.lap;
  */
 public class Observation {
 
-    int species;
-    double latitude;
-    double longitude;
-    public Observation(int species,double latitude,double longitude){
-        this.species=species;
-        this.latitude=latitude;
-        this.longitude=longitude;
+    int id;
+    // double latitude;
+    // double longitude;
+    boolean answers;
+
+
+    public Observation(int id, Boolean answers) {
+        this.id = id;
+        //  this.latitude=latitude;
+        //  this.longitude=longitude;
+        this.answers = answers;
+
     }
 
-    public double getLongitude() {
-        return longitude;
+    public boolean isAnswers() {
+        return answers;
     }
 
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
+    public void setAnswers(boolean answers) {
+        this.answers = answers;
     }
 
-    public double getLatitude() {
-        return latitude;
+    public int getId() {
+        return id;
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
+    public void setId(int id) {
+        this.id = id;
     }
+    // public double getLongitude() {
+    //      return longitude;
+    //  }
 
-    public int getSpecies() {
-        return species;
-    }
+    // public void setLongitude(double longitude) {
+    //      this.longitude = longitude;
+    //  }
 
-    public void setSpecies(int species) {
-        this.species = species;
-    }
+    // public double getLatitude() {
+    //      return latitude;
+    //  }
+
+    //  public void setLatitude(double latitude) {
+    //     this.latitude = latitude;
+    //  }
+
 }

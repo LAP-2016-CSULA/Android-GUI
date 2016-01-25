@@ -4,16 +4,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 import java.io.InputStream;
 
@@ -57,11 +55,13 @@ public class TreeInfoActivity extends AppCompatActivity {
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                final int id2= tree.getId();
                 Intent questionsIntent = new Intent(TreeInfoActivity.this, TreeQuestionsActivity.class);
                 questionsIntent.putExtra("userTokens", user);
                 questionsIntent.putExtra("tree", tree);
                 questionsIntent.putExtra("lat",l1);
                 questionsIntent.putExtra("long", l2);
+                questionsIntent.putExtra("id2", id2);
                 startActivity(questionsIntent);
             }
         });

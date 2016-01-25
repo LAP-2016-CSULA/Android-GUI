@@ -2,8 +2,8 @@ package com.example.romsm.lap;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.View;
@@ -25,13 +25,15 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
-    double l1,l2;
+    double l1, l2;
     ArrayList<String> questionsList = new ArrayList<String>();
     Button btnSubmit;
+    List<Observation> entries = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,18 +44,18 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         l1 = intent.getDoubleExtra("lat", 0);
         l2 = intent.getDoubleExtra("long", 0);
-        Log.d(Constants.TAG, "lat: " +l1 + " Long: " + l2);
+        Log.d(Constants.TAG, "lat: " + l1 + " Long: " + l2);
 
-        btnSubmit = (Button)findViewById(R.id.enter_button);
+        btnSubmit = (Button) findViewById(R.id.enter_button);
 
         new GetQuestionsListTask().execute();
     }
 
-    private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException{
+    private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
         ArrayList<String> questionsList = new ArrayList<String>();
         JSONArray data = new JSONArray(jsonString);
 
-        for(int i=0; i < data.length() ; i++) {
+        for (int i = 0; i < data.length(); i++) {
             JSONObject json_data = data.getJSONObject(i);
             int id = json_data.getInt("id");
             String text = json_data.getString("text");
@@ -62,10 +64,10 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         return questionsList;
     }
 
-    private void setupListView(){
+    private void setupListView() {
         setupButton();
-        final ListView lv = (ListView)findViewById(R.id.treeQuestionsList);
-        lv.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_checked, questionsList));
+        final ListView lv = (ListView) findViewById(R.id.treeQuestionsList);
+        lv.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, questionsList));
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -77,16 +79,17 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 //textView.setChecked(!textView.isChecked());
 
                 SparseBooleanArray sparseBooleanArray = lv.getCheckedItemPositions();
-                Log.d(Constants.TAG,"Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
+                Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
             }
         });
     }
 
-    private void setupButton(){
+    private void setupButton() {
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               new DbInsertTask().execute();
+                selection();
+                new DbInsertTask().execute();
             }
         });
     }
@@ -106,7 +109,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             }
         }
 
-        private Boolean getSpeciesList(){
+        private Boolean getSpeciesList() {
             HttpURLConnection conn = null;
             try {
                 URL url = new URL("http://isitso.pythonanywhere.com/questions/");
@@ -133,15 +136,15 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     Log.d(Constants.TAG, "speciesJSON: " + speciesListData);
                     return true;
                 }
-            }catch (MalformedURLException e){
+            } catch (MalformedURLException e) {
                 Log.i(Constants.TAG, "Malformed Url");
                 e.printStackTrace();
                 return false;
-            }catch (IOException e) {
+            } catch (IOException e) {
                 Log.i(Constants.TAG, "IO Exception");
                 e.printStackTrace();
                 return false;
-            }catch(JSONException e){
+            } catch (JSONException e) {
                 Log.i(Constants.TAG, "JSON Exception");
                 e.printStackTrace();
                 return false;
@@ -151,6 +154,24 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             }
             return false;
         }
+    }
+
+    public void selection (){
+        final ListView lv = (ListView)findViewById(R.id.treeQuestionsList);
+        Intent intent = getIntent();
+        int id2 = intent.getIntExtra("id2", 0);
+        SparseBooleanArray checked = lv.getCheckedItemPositions();
+        int size = questionsList.size();
+
+        for (int i = 0; i < size; i++) {
+
+
+
+                entries.add(new Observation(id2, lv.getCheckedItemPositions().get(i)));
+
+            Log.i(Constants.TAG,"ID: "+id2+"entries:"+ entries.get(i).answers + " -------------------------------------------------------");
+        }
+
     }
 
     public class DbInsertTask extends AsyncTask<Void, Void, Boolean> {
