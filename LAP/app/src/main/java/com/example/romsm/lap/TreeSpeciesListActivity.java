@@ -48,13 +48,17 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
 
         for(int i=0; i < data.length() ; i++) {
             JSONObject json_data = data.getJSONObject(i);
-            int type = json_data.getInt("type");
+            //int type = json_data.getInt("type");
+            JSONObject type = json_data.getJSONObject("type");
+            int type_id = type.getInt("id");
+            String type_name = type.getString("name");
             int id = json_data.getInt("id");
             String name = json_data.getString("name");
             String sciName = json_data.getString("scientific_name");
             String desc = json_data.getString("description");
-            if(type == 1){//type 1 = tree
-                speciesList.add(new TreeSpecies(name, sciName, desc, id));
+            String imageURL = json_data.getString("image");
+            if(type_id == 1){//type 1 = tree
+                speciesList.add(new TreeSpecies(name, sciName, desc, id, imageURL));
             }
 
         }
@@ -123,8 +127,8 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
                         sb = sb.append(responseString);
                     }
                     String speciesListData = sb.toString();
-                    speciesList = jsonToArrayList(speciesListData);
                     Log.d(Constants.TAG, "speciesJSON: " + speciesListData);
+                    speciesList = jsonToArrayList(speciesListData);
                     return true;
                 }
             }catch (MalformedURLException e){

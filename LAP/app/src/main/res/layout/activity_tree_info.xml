@@ -15,6 +15,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Tree Name"
+        android:textStyle="bold"
         android:id="@+id/nameText"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
@@ -24,16 +25,9 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Scientific Name"
+        android:textStyle="italic"
         android:id="@+id/sciNameText"
         android:layout_below="@+id/nameText"
-        android:layout_centerHorizontal="true" />
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/treeImage"
-        android:src="@drawable/ic_tree_48dp"
-        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
     <TextView
@@ -41,8 +35,31 @@
         android:layout_height="wrap_content"
         android:text="Description"
         android:id="@+id/descriptionText"
-        android:layout_below="@+id/treeImage"
+        android:gravity="center"
+        android:layout_below="@+id/sciNameText"
         android:layout_centerHorizontal="true" />
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/btnContinue"
+        android:layout_below="@+id/descriptionText">
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/treeImage"
+            android:src="@drawable/ic_tree_48dp"
+            android:scaleType="centerInside"
+            android:contentDescription="tree"
+            />
+        <ProgressBar
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/tree_image_progress"
+            style="@android:style/Widget.ProgressBar.Large"
+            />
+    </FrameLayout>
 
     <Button
         android:layout_width="wrap_content"
