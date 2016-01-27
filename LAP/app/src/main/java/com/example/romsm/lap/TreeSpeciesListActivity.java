@@ -2,8 +2,8 @@ package com.example.romsm.lap;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -14,10 +14,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -74,12 +77,12 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-                TreeSpecies tree = (TreeSpecies)lv.getItemAtPosition(position);
+                TreeSpecies tree = (TreeSpecies) lv.getItemAtPosition(position);
                 Log.d(Constants.TAG, tree.toString());
                 Intent infoIntent = new Intent(TreeSpeciesListActivity.this, TreeInfoActivity.class);
                 infoIntent.putExtra("userTokens", user);
                 infoIntent.putExtra("tree", tree);
-                infoIntent.putExtra("lat",l1);
+                infoIntent.putExtra("lat", l1);
                 infoIntent.putExtra("long", l2);
                 startActivity(infoIntent);
                 /*
@@ -91,7 +94,35 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
             }
         });
     }
+    private void writeStream(OutputStream out) throws IOException {
+        String output = "Hello world";
 
+        //  out.write(input.getBytes());
+        out.flush();
+    }
+
+    private void PostData() throws IOException {
+        HttpURLConnection conn = null;
+        String IPPORT = "www.android.com"; // or example 192.168.1.5:80
+        URL url = new URL("http://isitso.pythonanywhere.com/species/");
+        int status = conn.getResponseCode();
+        Log.d(Constants.TAG, "upload status " + status);
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        try {
+            urlConnection.setDoOutput(true);
+            urlConnection.setChunkedStreamingMode(0);
+
+            OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+            // writeStream(out);
+
+            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+            //   readStream(in);
+
+        }
+        finally {
+            urlConnection.disconnect();
+        }
+    }
     public class GetSpeciesListTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {

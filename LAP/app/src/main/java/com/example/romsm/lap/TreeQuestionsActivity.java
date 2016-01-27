@@ -1,6 +1,7 @@
 package com.example.romsm.lap;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -18,9 +19,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,6 +34,7 @@ import java.util.List;
 
 public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
+    private TreeSpecies tree;
     double l1, l2;
     ArrayList<String> questionsList = new ArrayList<String>();
     Button btnSubmit;
@@ -44,12 +49,17 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         l1 = intent.getDoubleExtra("lat", 0);
         l2 = intent.getDoubleExtra("long", 0);
+        tree= (TreeSpecies) intent.getSerializableExtra("tree");
         Log.d(Constants.TAG, "lat: " + l1 + " Long: " + l2);
 
         btnSubmit = (Button) findViewById(R.id.enter_button);
 
         new GetQuestionsListTask().execute();
     }
+
+    JSONArray jsonArray = new JSONArray(entries);
+
+
 
     private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
         ArrayList<String> questionsList = new ArrayList<String>();
@@ -63,6 +73,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         }
         return questionsList;
     }
+    JSONArray jsArray = new JSONArray(entries);
 
     private void setupListView() {
         setupButton();
@@ -89,6 +100,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 selection();
+               new UploadTask().execute();
                 new DbInsertTask().execute();
             }
         });
@@ -165,15 +177,77 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
         for (int i = 0; i < size; i++) {
 
-
-
-                entries.add(new Observation(id2, lv.getCheckedItemPositions().get(i)));
+            entries.add(new Observation(id2, lv.getCheckedItemPositions().get(i)));
 
             Log.i(Constants.TAG,"ID: "+id2+"entries:"+ entries.get(i).answers + " -------------------------------------------------------");
         }
 
     }
+    public class UploadTask extends AsyncTask<Void, Void, Boolean> {
 
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+            try {
+                URL url = new URL("http://isitso.pythonanywhere.com/trees/");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                Uri.Builder builder = new Uri.Builder()
+                        .appendQueryParameter("long", String.valueOf(l2))
+                        .appendQueryParameter("lat", String.valueOf(l1))
+                        .appendQueryParameter("landmark", null)
+                        .appendQueryParameter("species", String.valueOf(tree.getId()))
+                        .appendQueryParameter("changed_by", String.valueOf(1));
+                String query = builder.build().getEncodedQuery();
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(query);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "upload status----------------------------------------------------- " + status);
+
+                if (status == 201) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            } catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+            return false;
+        }
+    }
     public class DbInsertTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
