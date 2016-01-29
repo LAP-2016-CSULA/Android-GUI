@@ -83,8 +83,6 @@ public class MapsActivity extends AppCompatActivity
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         Log.i(Constants.TAG, user.getAccessToken()+"");
 
-        Toast.makeText(this, "Hello, " + user.getUsername(), Toast.LENGTH_LONG).show();
-
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
@@ -141,12 +139,6 @@ public class MapsActivity extends AppCompatActivity
                             listIntent.putExtra("lat", l1);
                             listIntent.putExtra("long", l2);
                             startActivity(listIntent);
-
-                            //adds tree marker
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(location)
-                                    .title("Tree")
-                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
                         }
                     });
                     builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -209,7 +201,6 @@ public class MapsActivity extends AppCompatActivity
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
         // Return false so that we don't consume the event and the default behavior still occurs
         // (the camera animates to the user's current position).
         return false;
