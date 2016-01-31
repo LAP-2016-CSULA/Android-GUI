@@ -41,6 +41,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     Button btnSubmit;
     List<Observation> entries = new ArrayList<>();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,8 +61,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         new GetQuestionsListTask().execute();
     }
 
-    JSONArray jsonArray = new JSONArray(entries);
-
 
 
     private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
@@ -76,7 +75,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         }
         return questionsList;
     }
-    JSONArray jsArray = new JSONArray(entries);
 
     private void setupListView() {
         setupButton();
@@ -90,7 +88,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 Log.d(Constants.TAG, o.toString());
 
                 //CheckedTextView textView = (CheckedTextView)v;
-                //textView.setChecked(!textView.isChecked());
+                //textView.setChecked(!textView.isChecked()
 
                 SparseBooleanArray sparseBooleanArray = lv.getCheckedItemPositions();
                 Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
@@ -103,8 +101,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 selection();
-               new UploadTask().execute();
-                new DbInsertTask().execute();
+                new UploadDailyTask().execute();
+             //   new UploadTask().execute();
+             //   new DbInsertTask().execute();
             }
         });
     }
@@ -211,6 +210,82 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                         .appendQueryParameter("changed_by", String.valueOf(1));
                 String query = builder.build().getEncodedQuery();
 
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(query);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "upload status----------------------------------------------------- " + status);
+
+                if (status == 201) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            } catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+            return false;
+        }
+    }
+
+
+    public class UploadDailyTask extends AsyncTask<Void, Void, Boolean> {
+
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            List<Integer> ids = new ArrayList<>();
+            List<Boolean> status2 = new ArrayList<>();
+            for (int i=0;i<entries.size();i++)
+
+            {
+                Observation observation = entries.get(i);
+                ids.add(observation.getId());  //Here get integer from your Observation object
+                status2.add(observation.answers);  //Here get boolean value from your Observation object.
+
+            }
+            // TODO: attempt authentication against a network service.
+            try {
+                URL url = new URL("http://isitso.pythonanywhere.com/dailyupdates/");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                Uri.Builder builder = new Uri.Builder()
+                         .appendQueryParameter("image",null)
+                        .appendQueryParameter("tree", String.valueOf(tree.getId()))
+                        .appendQueryParameter("changed_by", String.valueOf(1))
+                        .appendQueryParameter("choices", String.valueOf(status2));
+        String query = builder.build().getEncodedQuery();
+                Log.d(Constants.TAG, "answers---------------------------------------------------- " + String.valueOf(status2));
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(
                         new OutputStreamWriter(os, "UTF-8"));
