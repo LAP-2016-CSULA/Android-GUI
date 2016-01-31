@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="tree_green">#9EBF6D</color>
+    <color name="green_sprig">#BAD696</color>
+    <color name="green_seethe">#E4F1C3</color>
 </resources>

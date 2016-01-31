@@ -5,16 +5,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="center_horizontal"
     android:orientation="vertical"
+    android:background="@color/green_sprig"
     tools:context="com.example.romsm.lap.LoginActivity">
 
-    <android.support.v7.widget.Toolbar
+    <include
         android:id="@+id/my_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/tree_green"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+        layout="@layout/toolbar"/>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -31,6 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            android:layout_gravity="center_horizontal|center_vertical"
             android:visibility="gone" />
 
         <ScrollView
@@ -43,6 +40,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center_horizontal|center_vertical"
+                    android:src="@drawable/logolap"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Los Angeles Phenology"
+                    android:id="@+id/textView"
+                    android:layout_gravity="center_horizontal" />
 
                 <android.support.design.widget.TextInputLayout
                     android:layout_width="match_parent"
@@ -84,6 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="@string/action_sign_in"
+                    android:background="@color/green_seethe"
                     android:textStyle="bold" />
 
             </LinearLayout>
