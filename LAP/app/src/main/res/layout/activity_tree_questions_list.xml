@@ -12,12 +12,21 @@
         android:id="@+id/my_toolbar"
         layout="@layout/toolbar"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Is the tree in any of the following tree phenophases?"
+        android:layout_below="@id/my_toolbar"
+        android:gravity="center"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/titleTextView"/>
+
     <ListView
         android:id="@+id/treeQuestionsList"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:choiceMode="multipleChoice"
-        android:layout_below="@id/my_toolbar"
+        android:layout_below="@id/titleTextView"
         android:drawSelectorOnTop="false"
         android:layout_above="@+id/photo_button" />
 

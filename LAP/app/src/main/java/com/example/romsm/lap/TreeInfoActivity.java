@@ -58,13 +58,11 @@ public class TreeInfoActivity extends AppCompatActivity {
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final int id2= tree.getId();
                 Intent questionsIntent = new Intent(TreeInfoActivity.this, TreeQuestionsActivity.class);
                 questionsIntent.putExtra("userTokens", user);
                 questionsIntent.putExtra("tree", tree);
                 questionsIntent.putExtra("lat",l1);
                 questionsIntent.putExtra("long", l2);
-                questionsIntent.putExtra("id2", id2);
                 startActivity(questionsIntent);
             }
         });

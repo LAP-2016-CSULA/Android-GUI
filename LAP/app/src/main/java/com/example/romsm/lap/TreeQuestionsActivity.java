@@ -37,10 +37,17 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
     private TreeSpecies tree;
     double l1, l2;
-    ArrayList<String> questionsList = new ArrayList<String>();
     Button btnSubmit;
-    List<Observation> entries = new ArrayList<>();
 
+    //questionsList will hold a list of all the questions that are retrieved from the server
+    ArrayList<String> questionsList = new ArrayList<String>();
+    //answers will hold the answers to the above questions (probably better to use a map<String, Boolean> instead of two lists)
+    List<Boolean> answers = new ArrayList<>();
+    //questions will hold an object of TreeQuestions which we'll use to retrieve the question's ID depending if it's true or false
+    List<TreeQuestion> questions = new ArrayList<>();
+
+    //id of tree that is about to be added (is used when submiting dailyUpdate)
+    int treeID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,10 +65,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
         btnSubmit = (Button) findViewById(R.id.enter_button);
 
+        //will retrieve questions from server and add them to our listView
         new GetQuestionsListTask().execute();
     }
-
-
 
     private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
         ArrayList<String> questionsList = new ArrayList<String>();
@@ -71,6 +77,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             JSONObject json_data = data.getJSONObject(i);
             int id = json_data.getInt("id");
             String text = json_data.getString("text");
+
+            JSONArray choices = json_data.getJSONArray("choices");
+            int trueId;
+            int falseId;
+            if(choices.getJSONObject(0).getBoolean("value")){
+                trueId = choices.getJSONObject(0).getInt("id");
+                falseId = choices.getJSONObject(1).getInt("id");
+            }else{
+                trueId = choices.getJSONObject(1).getInt("id");
+                falseId = choices.getJSONObject(0).getInt("id");
+            }
+
+            //Log.d(Constants.TAG,"TRUE ID = " + trueId + " FALSE ID = " + falseId + "TEXT = " + text);
+            questions.add(new TreeQuestion(trueId, falseId, id, text));
             questionsList.add(text);
         }
         return questionsList;
@@ -84,8 +104,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView l, View v, int position, long id) {
-                Object o = lv.getItemAtPosition(position);
-                Log.d(Constants.TAG, o.toString());
+                //Object o = lv.getItemAtPosition(position);
+                //Log.d(Constants.TAG, o.toString());
 
                 //CheckedTextView textView = (CheckedTextView)v;
                 //textView.setChecked(!textView.isChecked()
@@ -101,9 +121,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 selection();
-                new UploadDailyTask().execute();
-             //   new UploadTask().execute();
-             //   new DbInsertTask().execute();
+
+                new UploadTreeTask().execute();
+                new DbInsertTask().execute();
             }
         });
     }
@@ -111,7 +131,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     public class GetQuestionsListTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
-            return getSpeciesList();
+            return getQuestionsList();
         }
 
         @Override
@@ -123,7 +143,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             }
         }
 
-        private Boolean getSpeciesList() {
+        private Boolean getQuestionsList() {
             HttpURLConnection conn = null;
             try {
                 URL url = new URL("http://isitso.pythonanywhere.com/questions/");
@@ -172,29 +192,25 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
     public void selection (){
         final ListView lv = (ListView)findViewById(R.id.treeQuestionsList);
-        Intent intent = getIntent();
-        int id2 = intent.getIntExtra("id2", 0);
-        SparseBooleanArray checked = lv.getCheckedItemPositions();
         int size = questionsList.size();
 
+        //checks if position is true/false and adds to answers list
         for (int i = 0; i < size; i++) {
+            answers.add(lv.getCheckedItemPositions().get(i));
 
-            entries.add(new Observation(id2, lv.getCheckedItemPositions().get(i)));
-
-            Log.i(Constants.TAG,"ID: "+id2+"entries:"+ entries.get(i).answers + " -------------------------------------------------------");
+            Log.i(Constants.TAG, "answers: " + answers.get(i));
         }
 
     }
-    public class UploadTask extends AsyncTask<Void, Void, Boolean> {
 
+    public class UploadTreeTask extends AsyncTask<Void, Void, Boolean> {
 
         HttpURLConnection conn = null;
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/trees/");
+                URL url = new URL(Constants.POST_TREE_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(10000);
                 conn.setConnectTimeout(15000);
@@ -221,17 +237,22 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 conn.connect();
 
                 int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "upload status----------------------------------------------------- " + status);
+                Log.d(Constants.TAG, "add tree status" + status);
 
                 if (status == 201) {
                     InputStream is = conn.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                     String responseString;
                     StringBuilder sb = new StringBuilder();
-
                     while ((responseString = reader.readLine()) != null) {
                         sb = sb.append(responseString);
                     }
+                    String response= sb.toString();
+                    Log.d(Constants.TAG, "add tree response: " + response);
+
+                    //get newly added tree's id from response json (to be used when sending daily updates)
+                    JSONObject responseJSON = new JSONObject(response);
+                    treeID = responseJSON.getInt("id");
 
                     return true;
                 }
@@ -243,61 +264,72 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 Log.i(Constants.TAG, "IO Exception");
                 e.printStackTrace();
                 return false;
+            } catch (JSONException e) {
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
             } finally {
                 if (conn != null)
                     conn.disconnect();
             }
             return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                new UploadDailyTask().execute();
+            } else {
+                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
 
     public class UploadDailyTask extends AsyncTask<Void, Void, Boolean> {
 
-
         HttpURLConnection conn = null;
+        JSONObject objToSend = new JSONObject();
+        JSONArray choices = new JSONArray();
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            List<Integer> ids = new ArrayList<>();
-            List<Boolean> status2 = new ArrayList<>();
-            for (int i=0;i<entries.size();i++)
 
-            {
-                Observation observation = entries.get(i);
-                ids.add(observation.getId());  //Here get integer from your Observation object
-                status2.add(observation.answers);  //Here get boolean value from your Observation object.
-
+            //checks each question's answer and retrieves it's appropriate ID then adds it to JSONArray
+            for(int i = 0 ; i < questionsList.size() ; i++ ){
+                if(answers.get(i)){
+                    choices.put(questions.get(i).getTrueID());
+                }
+                else{
+                    choices.put(questions.get(i).getFalseID());
+                }
             }
-            // TODO: attempt authentication against a network service.
+
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/dailyupdates/");
+                URL url = new URL(Constants.POST_DAILY_UPDATE_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(10000);
                 conn.setConnectTimeout(15000);
                 conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
 
-                Uri.Builder builder = new Uri.Builder()
-                         .appendQueryParameter("image",null)
-                        .appendQueryParameter("tree", String.valueOf(tree.getId()))
-                        .appendQueryParameter("changed_by", String.valueOf(1))
-                        .appendQueryParameter("choices", String.valueOf(status2));
-        String query = builder.build().getEncodedQuery();
-                Log.d(Constants.TAG, "answers---------------------------------------------------- " + String.valueOf(status2));
+                objToSend.put("image", null);
+                objToSend.put("tree", treeID);
+                objToSend.put("changed_by", 1);
+                objToSend.put("choices", choices);
+
+                Log.d(Constants.TAG, "JSON dailyUpdates: " + objToSend.toString());
+
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(os, "UTF-8"));
-                writer.write(query);
-                writer.flush();
-                writer.close();
+                os.write(objToSend.toString().getBytes("UTF-8"));
                 os.close();
 
                 conn.connect();
 
                 int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "upload status----------------------------------------------------- " + status);
+                Log.d(Constants.TAG, "dailyUpdates status " + status);
 
                 if (status == 201) {
                     InputStream is = conn.getInputStream();
@@ -308,7 +340,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     while ((responseString = reader.readLine()) != null) {
                         sb = sb.append(responseString);
                     }
-
+                    String response= sb.toString();
+                    Log.d(Constants.TAG, "add daily updates response: " + response);
                     return true;
                 }
             } catch (MalformedURLException e) {
@@ -319,12 +352,17 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 Log.i(Constants.TAG, "IO Exception");
                 e.printStackTrace();
                 return false;
-            } finally {
+            } catch (JSONException e) {
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;}
+            finally {
                 if (conn != null)
                     conn.disconnect();
             }
             return false;
         }
+
     }
     public class DbInsertTask extends AsyncTask<Void, Void, Boolean> {
         @Override

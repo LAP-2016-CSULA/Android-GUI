@@ -6,6 +6,8 @@ public class Constants {
     public static final String ACCESS_TOKEN_URL = "http://isitso.pythonanywhere.com/o/token/";
     public static final String REVOKE_TOKEN_URL = "http://isitso.pythonanywhere.com/o/revoke_token/";
     public static final String GET_USER_INFO_URL = "http://isitso.pythonanywhere.com/userinfo/";
+    public static final String POST_TREE_URL = "http://isitso.pythonanywhere.com/trees/";
+    public static final String POST_DAILY_UPDATE_URL = "http://isitso.pythonanywhere.com/dailyupdates/";
 
     public static final String TAG = "mycode";
 }
