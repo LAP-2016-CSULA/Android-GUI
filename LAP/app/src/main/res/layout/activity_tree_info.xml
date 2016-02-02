@@ -49,27 +49,16 @@
             android:layout_below="@+id/sciNameText"
             android:layout_centerHorizontal="true" />
 
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/treeImage"
+            android:src="@drawable/ic_tree_48dp"
+            android:scaleType="centerInside"
+            android:contentDescription="tree"
             android:layout_centerHorizontal="true"
             android:layout_above="@+id/btnContinue"
-            android:layout_below="@+id/descriptionText">
-            <ImageView
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:id="@+id/treeImage"
-                android:src="@drawable/ic_tree_48dp"
-                android:scaleType="centerInside"
-                android:contentDescription="tree"
-                />
-            <ProgressBar
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:id="@+id/tree_image_progress"
-                style="@android:style/Widget.ProgressBar.Large"
-                />
-        </FrameLayout>
+            android:layout_below="@+id/descriptionText"/>
 
         <Button
             android:layout_width="wrap_content"

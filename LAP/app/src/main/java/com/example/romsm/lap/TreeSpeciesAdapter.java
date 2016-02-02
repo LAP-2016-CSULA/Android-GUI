@@ -12,6 +12,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -33,34 +35,13 @@ public class TreeSpeciesAdapter extends ArrayAdapter<TreeSpecies> {
         ImageView treeImg = (ImageView) convertView.findViewById(R.id.speciesImg);
         // Populate the data into the template view using the data object
         name.setText(species.getName());
-        new DownloadImageTask(treeImg)
-                .execute(species.getImageURL());
+
+        Picasso img = Picasso.with(getContext());
+        img.setIndicatorsEnabled(true);
+        img.load(species.getImageURL()).into(treeImg);
+
         // Return the completed view to render on screen
         return convertView;
     }
 
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.i(Constants.TAG, "image Exception");
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-    }
 }

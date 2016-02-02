@@ -14,6 +14,8 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import java.io.InputStream;
 
 public class TreeInfoActivity extends AppCompatActivity {
@@ -23,7 +25,6 @@ public class TreeInfoActivity extends AppCompatActivity {
     private TreeSpecies tree;
     private double l1;
     private double l2;
-    private ProgressBar imageProgress;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,8 +39,6 @@ public class TreeInfoActivity extends AppCompatActivity {
         l1 = intent.getDoubleExtra("lat", 0);
         l2 = intent.getDoubleExtra("long", 0);
 
-        imageProgress = (ProgressBar) findViewById(R.id.tree_image_progress);
-
         treeName = (TextView)findViewById(R.id.nameText);
         treeSciName = (TextView)findViewById(R.id.sciNameText);
         treeDesc = (TextView) findViewById(R.id.descriptionText);
@@ -49,10 +48,9 @@ public class TreeInfoActivity extends AppCompatActivity {
         treeDesc.setText(tree.getDescription());
 
         treeImage = (ImageView) findViewById(R.id.treeImage);
-        imageProgress.setVisibility(View.VISIBLE);
-        treeImage.setVisibility(View.INVISIBLE);
-        new DownloadImageTask(treeImage)
-                .execute(tree.getImageURL());
+        Picasso img = Picasso.with(this);
+        img.setIndicatorsEnabled(true);
+        img.load(tree.getImageURL()).into(treeImage);
 
         Button continueButton = (Button) findViewById(R.id.btnContinue);
         continueButton.setOnClickListener(new View.OnClickListener() {
@@ -68,30 +66,4 @@ public class TreeInfoActivity extends AppCompatActivity {
         });
     }
 
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.i(Constants.TAG, "image Exception");
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-            imageProgress.setVisibility(View.INVISIBLE);
-            treeImage.setVisibility(View.VISIBLE);
-        }
-    }
 }

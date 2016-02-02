@@ -122,7 +122,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 selection();
 
-                new UploadTreeTask().execute();
+                new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate
                 new DbInsertTask().execute();
             }
         });
@@ -370,7 +370,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             String type = "tree";
             MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
             //dbHelper.clearTable();
-            dbHelper.insertMapEntry(type, String.valueOf(l1),String.valueOf(l2));
+            //dbHelper.insertMapEntry(type, String.valueOf(l1),String.valueOf(l2));
             dbHelper.close();
             return true;
         }

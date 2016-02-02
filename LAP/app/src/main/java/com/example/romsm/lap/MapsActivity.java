@@ -33,8 +33,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -97,18 +104,19 @@ public class MapsActivity extends AppCompatActivity
         cursor = dbHelper.getAllRows();
 
         cursor.moveToFirst();
-        Log.d(Constants.TAG, "cursor is after last? : " + cursor.isAfterLast());
+        //Log.d(Constants.TAG, "cursor is after last? : " + cursor.isAfterLast());
         while (!cursor.isAfterLast()) {
             String latitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LATITUDE));
             String longitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LONGITUDE));
             Double l1 = Double.parseDouble(latitude);
             Double l2 = Double.parseDouble(longitude);
+            String type = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.TYPE));
 
-            Log.d(Constants.TAG, latitude + " " + longitude);
+            //Log.d(Constants.TAG, latitude + " " + longitude);
 
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(l1, l2))
-                    .title("Tree")
+                    .title(type)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
             cursor.moveToNext();
         }
@@ -118,7 +126,9 @@ public class MapsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
-        setUpDbMarkers();
+        //setUpDbMarkers();
+        new RetrieveTreesTask().execute();
+
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
             @Override
@@ -258,7 +268,7 @@ public class MapsActivity extends AppCompatActivity
         menuInflater.inflate(R.menu.menu_buttons, menu);
         this.menu = menu;
         MenuItem usernameItem = menu.findItem(R.id.action_user);
-        usernameItem.setTitle(user.getUsername()+" : " + ((user.getIsStaff() == true) ? "Admin" : "User"));
+        usernameItem.setTitle(user.getUsername()+" : " + ((user.getIsStaff()) ? "Admin" : "User"));
         return true;
     }
 
@@ -395,6 +405,103 @@ public class MapsActivity extends AppCompatActivity
                 finish();
             } else {
                 Toast.makeText(MapsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+
+            }
+        }
+    }
+
+    /**
+     * Represents an asynchronous task used to get trees from server
+     */
+    public class RetrieveTreesTask extends AsyncTask<Void, Void, Boolean> {
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return retriveTree();
+        }
+
+        protected Boolean retriveTree(){
+            try {
+                URL url = new URL(Constants.POST_TREE_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "retrieve tree status " +" : " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String treesJSON = sb.toString();
+                    //Log.d(Constants.TAG, "treesJSON: " + treesJSON);
+                    jsonToDB(treesJSON);
+                    return true;
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            }catch (JSONException e) {
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+
+            try {
+                // Simulate network access.
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                return false;
+            }
+            return false;
+        }
+
+        private void jsonToDB(String jsonString) throws JSONException {
+            JSONArray data = new JSONArray(jsonString);
+
+            MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
+            dbHelper.clearTable();
+
+            for(int i=0; i < data.length() ; i++) {
+                JSONObject json_data = data.getJSONObject(i);
+
+                int id = json_data.getInt("id");
+
+                JSONObject species = json_data.getJSONObject("species");
+                String name = species.getString("name");
+                String sciName = species.getString("scientific_name");
+                String desc = species.getString("description");
+                String imageURL = species.getString("image");
+
+                double lng = json_data.getDouble("long");
+                double lat = json_data.getDouble("lat");
+
+                dbHelper.insertMapEntry(name, String.valueOf(lat),String.valueOf(lng));
+            }
+            dbHelper.close();
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                setUpDbMarkers();
+            } else {
+                Toast.makeText(MapsActivity.this, "Something went wrong. Couldn't retrieve pins from server. Try again later.", Toast.LENGTH_LONG).show();
 
             }
         }
