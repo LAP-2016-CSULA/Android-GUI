@@ -2,8 +2,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/layout">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <fragment
+        android:id="@+id/map"
+        class="com.google.android.gms.maps.SupportMapFragment"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight=".9"/>
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/my_toolbar"
@@ -12,12 +19,6 @@
         android:background="@color/tree_green"
         android:elevation="4dp"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
-
-    <fragment
-        android:id="@+id/map"
-        class="com.google.android.gms.maps.SupportMapFragment"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        android:layout_weight=".1"/>
 </LinearLayout>

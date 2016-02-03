@@ -3,7 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="tree_green">#9EBF6D</color>
+    <color name="tree_green">#d7d7d7</color>
     <color name="green_sprig">#BAD696</color>
     <color name="green_seethe">#E4F1C3</color>
 </resources>
