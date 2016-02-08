@@ -43,6 +43,7 @@
             android:label="@string/app_name" />
         <activity android:name=".TreeSpeciesListActivity" />
         <activity android:name=".TreeQuestionsActivity" />
+        <activity android:name=".Information" />
         <activity android:name=".TreeInfoActivity"></activity>
     </application>
 

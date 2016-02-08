@@ -288,6 +288,10 @@ public class MapsActivity extends AppCompatActivity
                 modeSelected = "tree";
                 changeItemsIcon(item);
                 return true;
+            case R.id.action_info:
+                modeSelected = "info";
+                startActivity(new Intent(MapsActivity.this, Information.class));
+                return true;
 
             case R.id.action_user:
                 //debug: remove trees
