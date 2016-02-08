@@ -1,9 +1,12 @@
 package com.example.romsm.lap;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -21,6 +25,8 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,16 +35,21 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
 public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
     private TreeSpecies tree;
+    private static final int ACTIVITY_START_CAMERA=1;
     double l1, l2;
     Button btnSubmit;
-
+    Button btnPhoto;
+    ImageView imageView;
+    String mCurrentPhotoPath;
     //questionsList will hold a list of all the questions that are retrieved from the server
     ArrayList<String> questionsList = new ArrayList<String>();
     //answers will hold the answers to the above questions (probably better to use a map<String, Boolean> instead of two lists)
@@ -55,19 +66,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tree_questions_list);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         l1 = intent.getDoubleExtra("lat", 0);
         l2 = intent.getDoubleExtra("long", 0);
         tree= (TreeSpecies) intent.getSerializableExtra("tree");
         Log.d(Constants.TAG, "lat: " + l1 + " Long: " + l2);
-
+        imageView= (ImageView)findViewById(R.id.imageView);
         btnSubmit = (Button) findViewById(R.id.enter_button);
+        btnPhoto = (Button) findViewById(R.id.photo_button);
 
         //will retrieve questions from server and add them to our listView
         new GetQuestionsListTask().execute();
     }
+
 
     private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
         ArrayList<String> questionsList = new ArrayList<String>();
@@ -126,8 +138,61 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 new DbInsertTask().execute();
             }
         });
-    }
+        btnPhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
 
+                    startActivityForResult(takePictureIntent, ACTIVITY_START_CAMERA);
+
+                }
+            }
+        });
+
+
+
+    }
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = "file:" + image.getAbsolutePath();
+        return image;
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case ACTIVITY_START_CAMERA:
+                if (requestCode == ACTIVITY_START_CAMERA && resultCode == RESULT_OK & null != data) {
+
+                    Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
+                    //to generate random file name
+                    String fileName = "tempimg.jpg";
+
+                    try {
+                        Bitmap photo = (Bitmap) data.getExtras().get("data");
+                        //captured image set in imageview
+                        imageView.setImageBitmap(photo);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
     public class GetQuestionsListTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
