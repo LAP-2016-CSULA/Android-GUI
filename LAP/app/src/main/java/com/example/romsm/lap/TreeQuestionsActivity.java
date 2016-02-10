@@ -134,8 +134,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 selection();
 
-                new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate
-                new DbInsertTask().execute();
+                new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
+                //new DbInsertTask().execute();
             }
         });
         btnPhoto.setOnClickListener(new View.OnClickListener() {
@@ -428,7 +428,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             return false;
         }
 
+        @Override
+         protected void onPostExecute(final Boolean success) {
+            if (success) {
+                Intent birdIntent = new Intent(TreeQuestionsActivity.this, BirdListActivity.class);
+                birdIntent.putExtra("userTokens", user);
+                startActivity(birdIntent);
+                finish();
+            } else {
+                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+            }
+        }
     }
+
+    /*
     public class DbInsertTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
@@ -443,13 +456,14 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             if (success) {
-                Intent mapIntent = new Intent(TreeQuestionsActivity.this, MapsActivity.class);
-                mapIntent.putExtra("userTokens", user);
-                startActivity(mapIntent);
+                Intent birdIntent = new Intent(TreeQuestionsActivity.this, BirdListActivity.class);
+                birdIntent.putExtra("userTokens", user);
+                startActivity(birdIntent);
                 finish();
             } else {
                 Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
             }
         }
     }
+    */
 }

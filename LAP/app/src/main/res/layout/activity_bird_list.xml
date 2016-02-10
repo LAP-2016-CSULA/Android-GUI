@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/green_sprig"
+    tools:context="com.example.romsm.lap.BirdListActivity">
+
+    <include
+        android:id="@+id/my_toolbar"
+        layout="@layout/toolbar"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Any birds feeding on the tree?"
+        android:id="@+id/question_textview"
+        android:layout_below="@+id/my_toolbar"
+        android:layout_centerHorizontal="true" />
+
+    <ListView
+        android:id="@+id/birdListView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:choiceMode="multipleChoice"
+        android:layout_below="@id/question_textview"
+        android:drawSelectorOnTop="false"
+        android:layout_above="@+id/enter_button" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter"
+        android:id="@+id/enter_bird_button"
+        android:background="@color/green_seethe"
+        android:layout_gravity="center_horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"/>
+
+
+</RelativeLayout>

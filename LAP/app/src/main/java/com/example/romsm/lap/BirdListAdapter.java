@@ -7,34 +7,35 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 
-public class TreeSpeciesAdapter extends ArrayAdapter<TreeSpecies> {
-    public TreeSpeciesAdapter(Context context, ArrayList<TreeSpecies> species) {
-        super(context, 0, species);
+public class BirdListAdapter extends ArrayAdapter<BirdSpecies> {
+    public BirdListAdapter(Context context, ArrayList<BirdSpecies> bird) {
+        super(context, 0, bird);
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         // Get the data item for this position
-        TreeSpecies species = getItem(position);
+        BirdSpecies bird = getItem(position);
         // Check if an existing view is being reused, otherwise inflate the view
         if (convertView == null) {
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_tree_species, parent, false);
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_bird_species, parent, false);
         }
         // Lookup view for data population
         TextView name = (TextView) convertView.findViewById(R.id.speciesName);
         ImageView treeImg = (ImageView) convertView.findViewById(R.id.speciesImg);
         // Populate the data into the template view using the data object
-        name.setText(species.getName());
+        name.setText(bird.getName());
 
         Picasso img = Picasso.with(getContext());
         img.setIndicatorsEnabled(true);
-        img.load(species.getImageURL()).into(treeImg);
+        img.load(bird.getImageURL()).into(treeImg);
 
         // Return the completed view to render on screen
         return convertView;
     }
-
 }

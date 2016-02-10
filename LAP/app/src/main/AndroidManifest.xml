@@ -46,6 +46,7 @@
         <activity android:name=".TreeQuestionsActivity" />
         <activity android:name=".Information" />
         <activity android:name=".TreeInfoActivity" />
+        <activity android:name=".BirdListActivity"/>
     </application>
 
 </manifest>
