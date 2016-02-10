@@ -289,7 +289,6 @@ public class MapsActivity extends AppCompatActivity
                 changeItemsIcon(item);
                 return true;
             case R.id.action_info:
-                modeSelected = "info";
                 startActivity(new Intent(MapsActivity.this, Information.class));
                 return true;
 
