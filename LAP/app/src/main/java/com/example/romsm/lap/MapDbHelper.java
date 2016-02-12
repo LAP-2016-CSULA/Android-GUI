@@ -14,7 +14,11 @@ public class MapDbHelper extends SQLiteOpenHelper{
     // you will actually use after this query.
     String[] projection = {
             MapContract.MapEntry._ID,
-            MapContract.MapEntry.TYPE,
+            MapContract.MapEntry.TREE_ID,
+            MapContract.MapEntry.TREE_NAME,
+            MapContract.MapEntry.TREE_SCI_NAME,
+            MapContract.MapEntry.TREE_DESC,
+            MapContract.MapEntry.TREE_IMAGE_URL,
             MapContract.MapEntry.LATITUDE,
             MapContract.MapEntry.LONGITUDE,};
 
@@ -22,7 +26,11 @@ public class MapDbHelper extends SQLiteOpenHelper{
             "CREATE TABLE " +
                     MapContract.MapEntry.TABLE_NAME + " (" +
                     MapContract.MapEntry._ID + " INTEGER PRIMARY KEY, " +
-                    MapContract.MapEntry.TYPE + " TEXT NOT NULL, " +
+                    MapContract.MapEntry.TREE_ID + " INTEGER NOT NULL, " +
+                    MapContract.MapEntry.TREE_NAME + " TEXT NOT NULL, " +
+                    MapContract.MapEntry.TREE_SCI_NAME + " TEXT NOT NULL, " +
+                    MapContract.MapEntry.TREE_DESC + " TEXT NOT NULL, " +
+                    MapContract.MapEntry.TREE_IMAGE_URL + " TEXT NOT NULL, " +
                     MapContract.MapEntry.LATITUDE + " TEXT NOT NULL, " +
                     MapContract.MapEntry.LONGITUDE + " TEXT NOT NULL " + ")";
 
@@ -45,11 +53,15 @@ public class MapDbHelper extends SQLiteOpenHelper{
         onUpgrade(db, oldVersion, newVersion);
     }
 
-    public void insertMapEntry(String type, String l1, String l2  ) {
+    public void insertMapEntry(int treeID, String treeName, String treeSciName, String treeDesc, String treeURL, String l1, String l2  ) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        cv.put(MapContract.MapEntry.TYPE, type);
+        cv.put(MapContract.MapEntry.TREE_ID, treeID);
+        cv.put(MapContract.MapEntry.TREE_NAME, treeName);
+        cv.put(MapContract.MapEntry.TREE_SCI_NAME, treeSciName);
+        cv.put(MapContract.MapEntry.TREE_DESC, treeDesc);
+        cv.put(MapContract.MapEntry.TREE_IMAGE_URL, treeURL);
         cv.put(MapContract.MapEntry.LATITUDE, l1);
         cv.put(MapContract.MapEntry.LONGITUDE, l2);
 

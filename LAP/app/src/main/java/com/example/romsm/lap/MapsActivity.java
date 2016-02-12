@@ -110,13 +110,17 @@ public class MapsActivity extends AppCompatActivity
             String longitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LONGITUDE));
             Double l1 = Double.parseDouble(latitude);
             Double l2 = Double.parseDouble(longitude);
-            String type = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.TYPE));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.TREE_NAME));
+            String sciName = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.TREE_SCI_NAME));
+            String desc = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.TREE_DESC));
+
 
             //Log.d(Constants.TAG, latitude + " " + longitude);
 
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(l1, l2))
-                    .title(type)
+                    .title(name)
+                    .snippet(desc)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
             cursor.moveToNext();
         }
@@ -181,8 +185,8 @@ public class MapsActivity extends AppCompatActivity
             // Access to the location has been granted to the app
             mMap.setMyLocationEnabled(true);
             setUpMap();
-            }
         }
+    }
 
     private void setUpMap() {
 
@@ -489,12 +493,13 @@ public class MapsActivity extends AppCompatActivity
                 String name = species.getString("name");
                 String sciName = species.getString("scientific_name");
                 String desc = species.getString("description");
-                String imageURL = species.getString("image");
 
                 double lng = json_data.getDouble("long");
                 double lat = json_data.getDouble("lat");
 
-                dbHelper.insertMapEntry(name, String.valueOf(lat),String.valueOf(lng));
+                String imageURL = json_data.getString("image");
+
+                dbHelper.insertMapEntry(id, name, sciName, desc, imageURL, String.valueOf(lat),String.valueOf(lng));
             }
             dbHelper.close();
         }
@@ -508,6 +513,5 @@ public class MapsActivity extends AppCompatActivity
 
             }
         }
-        
     }
 }

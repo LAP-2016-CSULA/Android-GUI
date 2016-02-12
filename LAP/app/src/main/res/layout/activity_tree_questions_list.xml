@@ -12,6 +12,7 @@
         android:id="@+id/my_toolbar"
         layout="@layout/toolbar"/>
 
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -20,6 +21,16 @@
         android:gravity="center"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/titleTextView"/>
+
+    <ProgressBar
+        android:id="@+id/question_progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"/>
 
     <ListView
         android:id="@+id/treeQuestionsList"

@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -16,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -25,6 +27,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +36,9 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -41,10 +46,13 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
     private TreeSpecies tree;
     private static final int ACTIVITY_START_CAMERA=1;
+    private static final int REQUEST_TAKE_PHOTO = 1;
     double l1, l2;
     boolean t,f;
     Button btnSubmit;
     Button btnPhoto;
+    ProgressBar progress;
+    ListView lvQuestions;
     ImageView imageView;
     String mCurrentPhotoPath;
     //questionsList will hold a list of all the questions that are retrieved from the server
@@ -75,6 +83,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         imageView= (ImageView)findViewById(R.id.imageView);
         btnSubmit = (Button) findViewById(R.id.enter_button);
         btnPhoto = (Button) findViewById(R.id.photo_button);
+        lvQuestions = (ListView) findViewById(R.id.treeQuestionsList);
+        progress = (ProgressBar)findViewById(R.id.question_progress);
 
         //will retrieve questions from server and add them to our listView
         new GetQuestionsListTask().execute();
@@ -128,18 +138,26 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         });
     }
 
+    private void showProgress(final boolean show) {
+        progress.setVisibility(show ? View.VISIBLE : View.GONE);
+        lvQuestions.setVisibility(show ? View.GONE : View.VISIBLE);
+        btnPhoto.setVisibility(show ? View.GONE : View.VISIBLE);
+        btnSubmit.setVisibility(show ? View.GONE : View.VISIBLE);
+    }
+
+
     private void setupButton() {
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                showProgress(true);
                 selection();
-             if(f==false) {
-                 new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
-                 //new DbInsertTask().execute();
-             }
-                else{
-                 new UploadDailyTask().execute();
-             }
+                if (f == false) {
+                    new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
+                    //new DbInsertTask().execute();
+                } else {
+                    new UploadDailyTask().execute();
+                }
             }
         });
         btnPhoto.setOnClickListener(new View.OnClickListener() {
@@ -147,13 +165,43 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                    startActivityForResult(takePictureIntent, ACTIVITY_START_CAMERA);
+                    //startActivityForResult(takePictureIntent, ACTIVITY_START_CAMERA);
+                    // Create the File where the photo should go
+                    File photoFile = null;
+                    try {
+                        photoFile = createImageFile();
+                    } catch (IOException e) {
+                        // Error occurred while creating the File
+                        Log.i(Constants.TAG, "IO Exception");
+                        e.printStackTrace();
+                    }
+                    // Continue only if the File was successfully created
+                    if (photoFile != null) {
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+                                Uri.fromFile(photoFile));
+                        startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
+                    }
                 }
             }
         });
+    }
 
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "TREE_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
 
-
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        Log.d(Constants.TAG, mCurrentPhotoPath);
+        return image;
     }
 
     @Override
@@ -340,83 +388,57 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
     public class UploadDailyTask extends AsyncTask<Void, Void, Boolean> {
 
-        HttpURLConnection conn = null;
-        JSONObject objToSend = new JSONObject();
-        JSONArray choices = new JSONArray();
+        int[] answerID = new int[questionsList.size()];
+        String charset = "UTF-8";
+        File treeFile;
 
         @Override
         protected Boolean doInBackground(Void... params) {
 
-            //checks each question's answer and retrieves it's appropriate ID then adds it to JSONArray
+            //checks each question's answer and retrieves it's appropriate ID then adds it to answerID array
             for(int i = 0 ; i < questionsList.size() ; i++ ){
                 if(answers.get(i)){
-                    choices.put(questions.get(i).getTrueID());
+                    answerID[i] = questions.get(i).getTrueID();
                 }
                 else{
-                    choices.put(questions.get(i).getFalseID());
+                    answerID[i] = questions.get(i).getFalseID();
                 }
             }
 
             try {
-                URL url = new URL(Constants.POST_DAILY_UPDATE_URL);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setReadTimeout(10000);
-                conn.setConnectTimeout(15000);
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
+                MultipartUtility multipart = new MultipartUtility(Constants.POST_DAILY_UPDATE_URL, charset);
 
-                objToSend.put("image", null);
-                objToSend.put("tree", treeID);
-                objToSend.put("changed_by", 1);
-                objToSend.put("choices", choices);
+                if (mCurrentPhotoPath != null){
+                    treeFile = new File(mCurrentPhotoPath);
+                    multipart.addFilePart("image", treeFile);
+                }
 
-                Log.d(Constants.TAG, "JSON dailyUpdates: " + objToSend.toString());
+                multipart.addFormField("tree", String.valueOf(treeID));
+                multipart.addFormField("changed_by", "1");
+                for(int id : answerID){
+                    multipart.addFormField("choices", String.valueOf(id));
+                }
+                List<String> response = multipart.finish();
 
-                OutputStream os = conn.getOutputStream();
-                os.write(objToSend.toString().getBytes("UTF-8"));
-                os.close();
+                Log.d(Constants.TAG, "add daily updates response: ");
+                for (String line : response) {
+                    Log.d(Constants.TAG, line);
+                }
 
-                conn.connect();
-
-                int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "dailyUpdates status " + status);
-
-                if (status == 201) {
-                    InputStream is = conn.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                    String responseString;
-                    StringBuilder sb = new StringBuilder();
-
-                    while ((responseString = reader.readLine()) != null) {
-                        sb = sb.append(responseString);
-                    }
-                    String response= sb.toString();
-                    Log.d(Constants.TAG, "add daily updates response: " + response);
+                if(!response.isEmpty()){
                     return true;
                 }
-            } catch (MalformedURLException e) {
-                Log.i(Constants.TAG, "Malformed Url");
-                e.printStackTrace();
-                return false;
             } catch (IOException e) {
                 Log.i(Constants.TAG, "IO Exception");
                 e.printStackTrace();
                 return false;
-            } catch (JSONException e) {
-                Log.i(Constants.TAG, "JSON Exception");
-                e.printStackTrace();
-                return false;}
-            finally {
-                if (conn != null)
-                    conn.disconnect();
             }
             return false;
         }
 
         @Override
          protected void onPostExecute(final Boolean success) {
+            showProgress(false);
             if (success) {
                 Intent birdIntent = new Intent(TreeQuestionsActivity.this, BirdListActivity.class);
                 birdIntent.putExtra("userTokens", user);
