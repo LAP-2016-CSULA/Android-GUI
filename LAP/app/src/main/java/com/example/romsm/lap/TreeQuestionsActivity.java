@@ -42,6 +42,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private TreeSpecies tree;
     private static final int ACTIVITY_START_CAMERA=1;
     double l1, l2;
+    boolean t,f;
     Button btnSubmit;
     Button btnPhoto;
     ImageView imageView;
@@ -66,8 +67,11 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         l1 = intent.getDoubleExtra("lat", 0);
         l2 = intent.getDoubleExtra("long", 0);
+        t = intent.getBooleanExtra("booleant", false);
+        f = intent.getBooleanExtra("booleanf", true);
         tree= (TreeSpecies) intent.getSerializableExtra("tree");
         Log.d(Constants.TAG, "lat: " + l1 + " Long: " + l2);
+        Log.d(Constants.TAG, "t =" + t + " f= " + f);
         imageView= (ImageView)findViewById(R.id.imageView);
         btnSubmit = (Button) findViewById(R.id.enter_button);
         btnPhoto = (Button) findViewById(R.id.photo_button);
@@ -129,9 +133,13 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 selection();
-
-                new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
-                //new DbInsertTask().execute();
+             if(f==false) {
+                 new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
+                 //new DbInsertTask().execute();
+             }
+                else{
+                 new UploadDailyTask().execute();
+             }
             }
         });
         btnPhoto.setOnClickListener(new View.OnClickListener() {
@@ -419,30 +427,4 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             }
         }
     }
-
-    /*
-    public class DbInsertTask extends AsyncTask<Void, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            String type = "tree";
-            MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
-            //dbHelper.clearTable();
-            //dbHelper.insertMapEntry(type, String.valueOf(l1),String.valueOf(l2));
-            dbHelper.close();
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            if (success) {
-                Intent birdIntent = new Intent(TreeQuestionsActivity.this, BirdListActivity.class);
-                birdIntent.putExtra("userTokens", user);
-                startActivity(birdIntent);
-                finish();
-            } else {
-                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-    */
 }

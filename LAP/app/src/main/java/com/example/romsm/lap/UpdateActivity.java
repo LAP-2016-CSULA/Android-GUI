@@ -1,8 +1,8 @@
 package com.example.romsm.lap;
 
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-public class TreeInfoActivity extends AppCompatActivity {
+public class UpdateActivity extends AppCompatActivity {
     private TextView treeName, treeSciName, treeDesc;
     private ImageView treeImage;
     private UserAccount user;
@@ -29,8 +29,7 @@ public class TreeInfoActivity extends AppCompatActivity {
 
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         tree = (TreeSpecies) intent.getSerializableExtra("tree");
-        l1 = intent.getDoubleExtra("lat", 0);
-        l2 = intent.getDoubleExtra("long", 0);
+
 
         treeName = (TextView)findViewById(R.id.nameText);
         treeSciName = (TextView)findViewById(R.id.sciNameText);
@@ -49,12 +48,9 @@ public class TreeInfoActivity extends AppCompatActivity {
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent questionsIntent = new Intent(TreeInfoActivity.this, TreeQuestionsActivity.class);
-                questionsIntent.putExtra("userTokens", user);
+                Intent questionsIntent = new Intent(UpdateActivity.this, TreeQuestionsActivity.class);
                 questionsIntent.putExtra("tree", tree);
-                questionsIntent.putExtra("lat",l1);
-                questionsIntent.putExtra("long", l2);
-                questionsIntent.putExtra("booleanf", false);
+                questionsIntent.putExtra("booleant", true);
                 startActivity(questionsIntent);
             }
         });
