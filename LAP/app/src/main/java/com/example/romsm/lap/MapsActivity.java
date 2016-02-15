@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -31,6 +32,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
@@ -76,7 +78,7 @@ public class MapsActivity extends AppCompatActivity
     private GoogleMap mMap;
 
     private UserAccount user;
-
+    private ImageView treeImage;
     private String modeSelected = "tree";
 
     Cursor cursor;
@@ -131,13 +133,14 @@ public class MapsActivity extends AppCompatActivity
     public void onMapReady(GoogleMap map) {
         mMap = map;
         //setUpDbMarkers();
+
         new RetrieveTreesTask().execute();
 
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
             @Override
             public void onMapLongClick(LatLng latLng) {
-                if (modeSelected.equals("tree")){
+                if (modeSelected.equals("tree")) {
                     final LatLng location = latLng;
                     //Show dialog asking user if they want to add a tree
                     AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
@@ -148,8 +151,8 @@ public class MapsActivity extends AppCompatActivity
                             //Uncomment below to switch to Tree List Activity
                             Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
                             listIntent.putExtra("userTokens", user);
-                            double l1=location.latitude;
-                            double l2=location.longitude;
+                            double l1 = location.latitude;
+                            double l2 = location.longitude;
                             listIntent.putExtra("lat", l1);
                             listIntent.putExtra("long", l2);
                             startActivity(listIntent);
@@ -171,7 +174,24 @@ public class MapsActivity extends AppCompatActivity
 
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
+
+
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+             //   using info class to test
+
+
+                Intent intent = new Intent(MapsActivity.this, Information.class);
+
+                startActivity(intent);
+            }
+        });
+        {
+        }
     }
+
     /**
      * Enables the My Location layer if the fine location permission has been granted.
      */
@@ -513,5 +533,6 @@ public class MapsActivity extends AppCompatActivity
 
             }
         }
+
     }
 }
