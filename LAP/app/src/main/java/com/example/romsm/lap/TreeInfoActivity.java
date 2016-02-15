@@ -7,6 +7,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -14,6 +15,7 @@ import com.squareup.picasso.Picasso;
 public class TreeInfoActivity extends AppCompatActivity {
     private TextView treeName, treeSciName, treeDesc;
     private ImageView treeImage;
+    private  ProgressBar progress;
     private UserAccount user;
     private TreeSpecies tree;
     private double l1;
@@ -35,6 +37,7 @@ public class TreeInfoActivity extends AppCompatActivity {
         treeName = (TextView)findViewById(R.id.nameText);
         treeSciName = (TextView)findViewById(R.id.sciNameText);
         treeDesc = (TextView) findViewById(R.id.descriptionText);
+        progress = (ProgressBar) findViewById(R.id.treeInfoProgress);
 
         treeName.setText(tree.getName());
         treeSciName.setText(tree.getScientificName());
@@ -43,7 +46,17 @@ public class TreeInfoActivity extends AppCompatActivity {
         treeImage = (ImageView) findViewById(R.id.treeImage);
         Picasso img = Picasso.with(this);
         img.setIndicatorsEnabled(true);
-        img.load(tree.getImageURL()).into(treeImage);
+        img.load(tree.getImageURL()).into(treeImage, new com.squareup.picasso.Callback() {
+            @Override
+            public void onSuccess() {
+                toggleProgress(false);
+            }
+
+            @Override
+            public void onError() {
+                toggleProgress(false);
+            }
+        });
 
         Button continueButton = (Button) findViewById(R.id.btnContinue);
         continueButton.setOnClickListener(new View.OnClickListener() {
@@ -58,6 +71,17 @@ public class TreeInfoActivity extends AppCompatActivity {
                 startActivity(questionsIntent);
             }
         });
+    }
+
+    private void toggleProgress(Boolean toggle){
+        if (toggle){
+            progress.setVisibility(View.VISIBLE);
+            treeImage.setVisibility(View.GONE);
+        }
+        else{
+            progress.setVisibility(View.GONE);
+            treeImage.setVisibility(View.VISIBLE);
+        }
     }
 
 }

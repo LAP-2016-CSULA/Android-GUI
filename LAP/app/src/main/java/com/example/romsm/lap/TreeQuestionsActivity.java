@@ -156,6 +156,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
                     //new DbInsertTask().execute();
                 } else {
+                    treeID = tree.getId();
                     new UploadDailyTask().execute();
                 }
             }

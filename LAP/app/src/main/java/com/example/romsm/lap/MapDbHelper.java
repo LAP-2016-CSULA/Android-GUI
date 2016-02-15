@@ -73,6 +73,26 @@ public class MapDbHelper extends SQLiteOpenHelper{
         return db.query(MapContract.MapEntry.TABLE_NAME, projection, null, null, null, null, null);
     }
 
+    public int getTreeID(int id){
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(MapContract.MapEntry.TABLE_NAME, new String[]{MapContract.MapEntry.TREE_ID}, MapContract.MapEntry._ID + "=?", new String[]{String.valueOf(id)}, null, null, null, null);
+        if(cursor != null){
+            cursor.moveToFirst();
+        }
+
+        return cursor.getInt(0);
+    }
+
+    public TreeSpecies getTreeInfo(int treeID){
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(MapContract.MapEntry.TABLE_NAME, new String[]{ MapContract.MapEntry.TREE_NAME, MapContract.MapEntry.TREE_SCI_NAME, MapContract.MapEntry.TREE_DESC, MapContract.MapEntry.TREE_IMAGE_URL }, MapContract.MapEntry.TREE_ID + "=?", new String[]{String.valueOf(treeID)}, null, null, null, null);
+        if(cursor != null){
+            cursor.moveToFirst();
+        }
+
+        return new TreeSpecies(cursor.getString(0),cursor.getString(1),cursor.getString(2),treeID,cursor.getString(3));
+    }
+
     public void clearTable() {
         SQLiteDatabase db = getWritableDatabase();
         db.execSQL("delete from " + MapContract.MapEntry.TABLE_NAME);

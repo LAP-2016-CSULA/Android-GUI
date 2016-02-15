@@ -49,6 +49,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 
 /**
  * This demo shows how GMS Location can be used to check for changes to the users location.  The
@@ -81,6 +82,8 @@ public class MapsActivity extends AppCompatActivity
     private ImageView treeImage;
     private String modeSelected = "tree";
 
+    private HashMap<Marker, Integer> markerIDs;
+
     Cursor cursor;
 
     @Override
@@ -102,12 +105,14 @@ public class MapsActivity extends AppCompatActivity
     }
 
     private void setUpDbMarkers(){
+        markerIDs = new HashMap<>();
         MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
         cursor = dbHelper.getAllRows();
 
         cursor.moveToFirst();
         //Log.d(Constants.TAG, "cursor is after last? : " + cursor.isAfterLast());
         while (!cursor.isAfterLast()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(MapContract.MapEntry._ID));
             String latitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LATITUDE));
             String longitude = cursor.getString(cursor.getColumnIndexOrThrow(MapContract.MapEntry.LONGITUDE));
             Double l1 = Double.parseDouble(latitude);
@@ -118,12 +123,14 @@ public class MapsActivity extends AppCompatActivity
 
 
             //Log.d(Constants.TAG, latitude + " " + longitude);
-
-            mMap.addMarker(new MarkerOptions()
+            Marker m = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(l1, l2))
                     .title(name)
                     .snippet(desc)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
+
+            markerIDs.put(m,id);
+
             cursor.moveToNext();
         }
         cursor.close();
@@ -180,11 +187,14 @@ public class MapsActivity extends AppCompatActivity
 
             @Override
             public void onInfoWindowClick(Marker marker) {
-             //   using info class to test
+                //   using info class to test
 
-
-                Intent intent = new Intent(MapsActivity.this, Information.class);
-
+                MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
+                int treeID = dbHelper.getTreeID(markerIDs.get(marker));
+                //Log.d(Constants.TAG, "id: " + markerIDs.get(marker)+ " tree id: " + treeID);
+                Intent intent = new Intent(MapsActivity.this, UpdateActivity.class);
+                intent.putExtra("userTokens", user);
+                intent.putExtra("treeID", treeID);
                 startActivity(intent);
             }
         });
