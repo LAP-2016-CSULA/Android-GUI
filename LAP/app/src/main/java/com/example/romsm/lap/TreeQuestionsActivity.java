@@ -150,12 +150,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showProgress(true);
+
                 selection();
-                if (f == false) {
+                if(mCurrentPhotoPath == null){
+                    Toast.makeText(getApplicationContext(), "Please submit a picture of the tree before you move on",
+                            Toast.LENGTH_LONG).show();
+                }
+
+                else if (f == false) {
+                    showProgress(true);
                     new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
                     //new DbInsertTask().execute();
-                } else {
+                }
+                else {
+                    showProgress(true);
                     treeID = tree.getId();
                     new UploadDailyTask().execute();
                 }
