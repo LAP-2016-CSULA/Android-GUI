@@ -1,5 +1,7 @@
 package com.example.romsm.lap;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.Serializable;
@@ -7,7 +9,7 @@ import java.io.Serializable;
 
 public class UserAccount implements Serializable {
     private String accessToken, refreshToken, tokenType, scope, expiresIn, username;
-    private Boolean isStaff;
+    private Boolean isStaff, isSuperUser;
 
     public UserAccount(String jsonString) throws JSONException {
         JSONObject jsonUser = new JSONObject(jsonString);
@@ -55,9 +57,16 @@ public class UserAccount implements Serializable {
 
     public void setIsStaff(Boolean isStaff){ this.isStaff = isStaff; }
 
+    public Boolean getIsSuperUser(){ return isSuperUser; }
+
+    public void setIsSuperUser(Boolean isSuperUser){ this.isSuperUser = isSuperUser; }
+
     public void setUserInfo(String jsonString) throws JSONException{
         JSONObject jsonUser = new JSONObject(jsonString);
         setUsername((String) jsonUser.optString("username"));
         setIsStaff(jsonUser.optBoolean("is_staff"));
+        setIsSuperUser(jsonUser.optBoolean("is_superuser"));
+
+
     }
 }

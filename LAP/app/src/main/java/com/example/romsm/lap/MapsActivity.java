@@ -80,7 +80,6 @@ public class MapsActivity extends AppCompatActivity
 
     private UserAccount user;
     private ImageView treeImage;
-    private String modeSelected = "tree";
 
     private HashMap<Marker, Integer> markerIDs;
 
@@ -147,7 +146,7 @@ public class MapsActivity extends AppCompatActivity
 
             @Override
             public void onMapLongClick(LatLng latLng) {
-                if (modeSelected.equals("tree")) {
+
                     final LatLng location = latLng;
                     //Show dialog asking user if they want to add a tree
                     AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
@@ -155,7 +154,6 @@ public class MapsActivity extends AppCompatActivity
                         public void onClick(DialogInterface dialog, int id) {
                             // User clicked OK button
 
-                            //Uncomment below to switch to Tree List Activity
                             Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
                             listIntent.putExtra("userTokens", user);
                             double l1 = location.latitude;
@@ -174,7 +172,6 @@ public class MapsActivity extends AppCompatActivity
                             .setTitle(R.string.app_name);
                     AlertDialog dialog = builder.create();
                     dialog.show();
-                }
             }
         });
 
@@ -302,7 +299,14 @@ public class MapsActivity extends AppCompatActivity
         menuInflater.inflate(R.menu.menu_buttons, menu);
         this.menu = menu;
         MenuItem usernameItem = menu.findItem(R.id.action_user);
-        usernameItem.setTitle(user.getUsername()+" : " + ((user.getIsStaff()) ? "Admin" : "User"));
+        String group = "Student";
+        if(user.getIsStaff()){
+            group = "Staff";
+        }
+        if(user.getIsSuperUser()){
+            group = "Admin";
+        }
+        usernameItem.setTitle(user.getUsername()+" : " + group);
         return true;
     }
 
@@ -313,14 +317,10 @@ public class MapsActivity extends AppCompatActivity
                 new UserLogoutTask().execute();
                 return true;
 
-            case R.id.action_bird:
-                modeSelected = "bird";
-                changeItemsIcon(item);
-                return true;
-
-            case R.id.action_tree:
-                modeSelected = "tree";
-                changeItemsIcon(item);
+            case R.id.action_search:
+                Intent speciesIntent = new Intent(MapsActivity.this, AllSpeciesActivity.class);
+                speciesIntent.putExtra("userTokens", user);
+                startActivity(speciesIntent);
                 return true;
             case R.id.action_info:
                 startActivity(new Intent(MapsActivity.this, Information.class));
@@ -342,20 +342,6 @@ public class MapsActivity extends AppCompatActivity
                 // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
 
-        }
-    }
-
-    //changes icon of selected option item
-    public void changeItemsIcon(MenuItem item){
-        if(modeSelected.equals("tree")){
-            item.setIcon(R.drawable.ic_tree_48dp);
-            MenuItem birdItem = menu.findItem(R.id.action_bird);
-            birdItem.setIcon(R.drawable.ic_bird_gray_48dp);
-        }
-        else if(modeSelected.equals("bird")){
-            item.setIcon(R.drawable.ic_bird_48dp);
-            MenuItem treeItem = menu.findItem(R.id.action_tree);
-            treeItem.setIcon(R.drawable.ic_tree_gray_48dp);
         }
     }
 

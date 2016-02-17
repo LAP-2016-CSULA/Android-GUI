@@ -50,7 +50,8 @@
         <activity android:name=".Information" />
         <activity android:name=".TreeInfoActivity" />
         <activity android:name=".BirdListActivity" />
-        <activity android:name=".UpdateActivity"></activity>
+        <activity android:name=".UpdateActivity" />
+        <activity android:name=".AllSpeciesActivity"></activity>
     </application>
 
 </manifest>

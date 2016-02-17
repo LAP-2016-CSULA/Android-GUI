@@ -2,6 +2,7 @@ package com.example.romsm.lap;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -85,6 +87,10 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         btnPhoto = (Button) findViewById(R.id.photo_button);
         lvQuestions = (ListView) findViewById(R.id.treeQuestionsList);
         progress = (ProgressBar)findViewById(R.id.question_progress);
+
+        if(t && !user.getIsSuperUser()){ //if not admin don't show photo button
+            btnPhoto.setVisibility(View.INVISIBLE);
+        }
 
         //will retrieve questions from server and add them to our listView
         new GetQuestionsListTask().execute();
@@ -401,6 +407,27 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         String charset = "UTF-8";
         File treeFile;
 
+        private void reduceImageSize(){
+            Bitmap bitmapImage = BitmapFactory.decodeFile(mCurrentPhotoPath);
+            int nh = (int) ( bitmapImage.getHeight() * (512.0 / bitmapImage.getWidth()) );
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmapImage, 512, nh, true);
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream(mCurrentPhotoPath);
+                scaled.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (out != null) {
+                        out.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         @Override
         protected Boolean doInBackground(Void... params) {
 
@@ -417,10 +444,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             try {
                 MultipartUtility multipart = new MultipartUtility(Constants.POST_DAILY_UPDATE_URL, charset);
 
-                if (mCurrentPhotoPath != null){
-                    treeFile = new File(mCurrentPhotoPath);
-                    multipart.addFilePart("image", treeFile);
-                }
+                reduceImageSize();
+                treeFile = new File(mCurrentPhotoPath);
+                multipart.addFilePart("image", treeFile);
 
                 multipart.addFormField("tree", String.valueOf(treeID));
                 multipart.addFormField("changed_by", "1");
