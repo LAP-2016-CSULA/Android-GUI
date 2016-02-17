@@ -64,6 +64,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     //questions will hold an object of TreeQuestions which we'll use to retrieve the question's ID depending if it's true or false
     List<TreeQuestion> questions = new ArrayList<>();
 
+
     //id of tree that is about to be added (is used when submiting dailyUpdate)
     int treeID;
 
@@ -71,6 +72,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_questions_list);
+
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         Intent intent = getIntent();
@@ -176,6 +178,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         btnPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                     //startActivityForResult(takePictureIntent, ACTIVITY_START_CAMERA);
@@ -183,6 +186,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     File photoFile = null;
                     try {
                         photoFile = createImageFile();
+
 
                     } catch (IOException e) {
                         // Error occurred while creating the File
@@ -193,7 +197,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     if (photoFile != null) {
                         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
                                 Uri.fromFile(photoFile));
-                        btnSubmit.setEnabled(true);
                         startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
                     }
                 }
@@ -203,6 +206,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
     private File createImageFile() throws IOException {
         // Create an image file name
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "TREE_" + timeStamp + "_";
         File storageDir = Environment.getExternalStoragePublicDirectory(
@@ -236,6 +240,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                         Bitmap photo = (Bitmap) data.getExtras().get("data");
                         //captured image set in imageview
                         imageView.setImageBitmap(photo);
+                        btnSubmit.setEnabled(true);
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
