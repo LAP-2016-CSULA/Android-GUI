@@ -219,6 +219,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
+        btnSubmit.setEnabled(true);
         Log.d(Constants.TAG, mCurrentPhotoPath);
         return image;
     }
@@ -240,7 +241,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                         Bitmap photo = (Bitmap) data.getExtras().get("data");
                         //captured image set in imageview
                         imageView.setImageBitmap(photo);
-                        btnSubmit.setEnabled(true);
+
 
                     } catch (Exception e) {
                         e.printStackTrace();
