@@ -87,7 +87,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         btnPhoto = (Button) findViewById(R.id.photo_button);
         lvQuestions = (ListView) findViewById(R.id.treeQuestionsList);
         progress = (ProgressBar)findViewById(R.id.question_progress);
-
+        btnSubmit.setEnabled(false);
         if(t && !user.getIsSuperUser()){ //if not admin don't show photo button
             btnPhoto.setVisibility(View.INVISIBLE);
         }
@@ -158,17 +158,15 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 selection();
-                if(mCurrentPhotoPath == null){
+                if (mCurrentPhotoPath == null) {
                     Toast.makeText(getApplicationContext(), "Please submit a picture of the tree before you move on",
                             Toast.LENGTH_LONG).show();
-                }
 
-                else if (f == false) {
+                } else if (f == false) {
                     showProgress(true);
                     new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
                     //new DbInsertTask().execute();
-                }
-                else {
+                } else {
                     showProgress(true);
                     treeID = tree.getId();
                     new UploadDailyTask().execute();
@@ -185,6 +183,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     File photoFile = null;
                     try {
                         photoFile = createImageFile();
+
                     } catch (IOException e) {
                         // Error occurred while creating the File
                         Log.i(Constants.TAG, "IO Exception");
@@ -194,6 +193,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     if (photoFile != null) {
                         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
                                 Uri.fromFile(photoFile));
+                        btnSubmit.setEnabled(true);
                         startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
                     }
                 }
