@@ -22,4 +22,7 @@
     <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
     <string name="title_activity_camera">Camera</string>
+
+    <string name="tree_questions_title">Is the tree in any of the following tree phenophases?</string>
+    <string name="bird_seen_title">Any birds feeding on the tree?</string>
 </resources>

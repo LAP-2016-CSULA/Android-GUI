@@ -6,17 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/green_sprig"
+    android:padding="@dimen/activity_vertical_margin"
     tools:context="com.example.romsm.lap.TreeQuestionsActivity">
-
-    <include
-        android:id="@+id/my_toolbar"
-        layout="@layout/toolbar"/>
-
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Is the tree in any of the following tree phenophases?"
+        android:text="@string/tree_questions_title"
         android:layout_below="@id/my_toolbar"
         android:gravity="center"
         android:textAppearance="?android:attr/textAppearanceLarge"
@@ -40,25 +36,44 @@
         android:layout_below="@id/titleTextView"
         android:drawSelectorOnTop="false"
         android:layout_above="@+id/photo_button" />
-
-    <Button
+    <ListView
+        android:id="@+id/birdList"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add Photo"
+        android:choiceMode="multipleChoice"
+        android:layout_below="@id/titleTextView"
+        android:drawSelectorOnTop="false"
+        android:layout_above="@+id/photo_button"
+        android:visibility="gone"
+        />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_camera_warning"
         android:id="@+id/photo_button"
-        android:background="@color/green_seethe"
         android:layout_gravity="center_horizontal"
         android:layout_alignParentBottom="true"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter"
+        android:text="Submit"
         android:id="@+id/enter_button"
         android:background="@color/green_seethe"
         android:layout_gravity="center_horizontal"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"/>
+
+    <ImageButton
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:id="@+id/bird_button"
+        android:background="@null"
+        android:src="@drawable/ic_bird_48dp"
+        android:scaleType="fitCenter"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

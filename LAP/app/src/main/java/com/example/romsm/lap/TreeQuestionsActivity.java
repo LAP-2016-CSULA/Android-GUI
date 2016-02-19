@@ -16,9 +16,12 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckedTextView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -27,7 +30,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,21 +43,25 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 
 public class TreeQuestionsActivity extends AppCompatActivity {
     private UserAccount user;
     private TreeSpecies tree;
-    private static final int ACTIVITY_START_CAMERA=1;
     private static final int REQUEST_TAKE_PHOTO = 1;
+    private boolean isBirdList = false;
     double l1, l2;
     boolean t,f;
     Button btnSubmit;
-    Button btnPhoto;
+    ImageButton btnPhoto;
+    ImageButton btnBird;
     ProgressBar progress;
     ListView lvQuestions;
+    ListView lvBirds;
     ImageView imageView;
+    TextView titleQuestion;
     String mCurrentPhotoPath;
     //questionsList will hold a list of all the questions that are retrieved from the server
     ArrayList<String> questionsList = new ArrayList<String>();
@@ -63,6 +69,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     List<Boolean> answers = new ArrayList<>();
     //questions will hold an object of TreeQuestions which we'll use to retrieve the question's ID depending if it's true or false
     List<TreeQuestion> questions = new ArrayList<>();
+    //birdMap has all species of birds as key and true/false as value
+    HashMap<BirdSpecies, Boolean> birdMap = new HashMap<>();
 
 
     //id of tree that is about to be added (is used when submiting dailyUpdate)
@@ -73,8 +81,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_questions_list);
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
+        //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        //setSupportActionBar(myToolbar);
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         l1 = intent.getDoubleExtra("lat", 0);
@@ -86,15 +94,19 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         Log.d(Constants.TAG, "t =" + t + " f= " + f);
         imageView= (ImageView)findViewById(R.id.imageView);
         btnSubmit = (Button) findViewById(R.id.enter_button);
-        btnPhoto = (Button) findViewById(R.id.photo_button);
+        btnPhoto = (ImageButton) findViewById(R.id.photo_button);
+        btnBird = (ImageButton) findViewById(R.id.bird_button);
         lvQuestions = (ListView) findViewById(R.id.treeQuestionsList);
+        lvBirds = (ListView) findViewById(R.id.birdList);
         progress = (ProgressBar)findViewById(R.id.question_progress);
+        titleQuestion = (TextView) findViewById(R.id.titleTextView);
         btnSubmit.setEnabled(false);
         if(t && !user.getIsSuperUser()){ //if not admin don't show photo button
             btnPhoto.setVisibility(View.INVISIBLE);
         }
 
         //will retrieve questions from server and add them to our listView
+        new GetBirdListTask().execute();
         new GetQuestionsListTask().execute();
     }
 
@@ -146,6 +158,32 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         });
     }
 
+    private void setupBirdListView(){
+        final ListView blv = (ListView) findViewById(R.id.birdList);
+        ArrayList<BirdSpecies> birdList = new ArrayList<>();
+        for(BirdSpecies birdKey : birdMap.keySet()){
+            birdList.add(birdKey);
+        }
+        BirdListAdapter birdAdapter = new BirdListAdapter(this, birdList);
+        blv.setAdapter(birdAdapter);
+        blv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView l, View v, int position, long id) {
+
+                SparseBooleanArray sparseBooleanArray = blv.getCheckedItemPositions();
+                CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.speciesName);
+                ctv.toggle();
+                Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
+            }
+        });
+    }
+
+    public void toggle(View v)
+    {
+        CheckedTextView cv = (CheckedTextView)v;
+        cv.toggle();
+    }
+
     private void showProgress(final boolean show) {
         progress.setVisibility(show ? View.VISIBLE : View.GONE);
         lvQuestions.setVisibility(show ? View.GONE : View.VISIBLE);
@@ -178,7 +216,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         btnPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                     //startActivityForResult(takePictureIntent, ACTIVITY_START_CAMERA);
@@ -202,6 +239,24 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 }
             }
         });
+        btnBird.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!isBirdList){
+                    lvQuestions.setVisibility(View.INVISIBLE);
+                    lvBirds.setVisibility(View.VISIBLE);
+                    btnBird.setImageResource(R.drawable.ic_tree_48dp);
+                    titleQuestion.setText(R.string.bird_seen_title);
+                }
+                else{
+                    lvQuestions.setVisibility(View.VISIBLE);
+                    lvBirds.setVisibility(View.INVISIBLE);
+                    btnBird.setImageResource(R.drawable.ic_bird_48dp);
+                    titleQuestion.setText(R.string.tree_questions_title);
+                }
+                isBirdList = !isBirdList;
+            }
+        });
     }
 
     private File createImageFile() throws IOException {
@@ -219,7 +274,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
-        btnSubmit.setEnabled(true);
         Log.d(Constants.TAG, mCurrentPhotoPath);
         return image;
     }
@@ -228,25 +282,21 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
-            case ACTIVITY_START_CAMERA:
-                if (requestCode == ACTIVITY_START_CAMERA && resultCode == RESULT_OK & null != data) {
-
-                    Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
-                    //to generate random file name
-                    String fileName = "tempimg.jpg";
-
-                    try {
-                        Bitmap photo = (Bitmap) data.getExtras().get("data");
-                        //captured image set in imageview
-                        imageView.setImageBitmap(photo);
-
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            case REQUEST_TAKE_PHOTO:
+                if(resultCode == RESULT_OK){
+                    btnSubmit.setEnabled(true);
+                    btnPhoto.setImageResource(R.drawable.ic_camera_checked);
+                    Log.d(Constants.TAG, "PICTURE TAKEN");
                 }
+                else{
+                    File deleted = new File(mCurrentPhotoPath);
+                    boolean d = deleted.delete();
+                    Log.d(Constants.TAG, "PICTURE NOT TAKEN . image deleted?: " + d);
+                    btnPhoto.setImageResource(R.drawable.ic_camera_warning);
+                    btnSubmit.setEnabled(false);
+                }
+                break;
+
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -482,13 +532,92 @@ public class TreeQuestionsActivity extends AppCompatActivity {
          protected void onPostExecute(final Boolean success) {
             showProgress(false);
             if (success) {
-                Intent birdIntent = new Intent(TreeQuestionsActivity.this, BirdListActivity.class);
-                birdIntent.putExtra("userTokens", user);
-                startActivity(birdIntent);
+                Intent mapIntent = new Intent(TreeQuestionsActivity.this, MapsActivity.class);
+                mapIntent.putExtra("userTokens", user);
+                startActivity(mapIntent);
                 finish();
             } else {
                 Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
             }
         }
     }
+
+    public class GetBirdListTask extends AsyncTask<Void, Void, Boolean> {
+        String jsonResponse;
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL("http://isitso.pythonanywhere.com/species/?type_name=bird");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("client_id", Constants.CLIENT_ID);
+                conn.setRequestProperty("client_secret", Constants.CLIENT_SECRET);
+                conn.setRequestProperty("Authorization", "Bearer " + user.getAccessToken());
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "species status " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    jsonResponse = sb.toString();
+                    Log.d(Constants.TAG, "bird JSON: " + jsonResponse);
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            } catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+            return false;
+        }
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                setUpBirdMap(jsonResponse);
+            } else {
+                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void setUpBirdMap(String jsonString){
+        try {
+            JSONArray data = new JSONArray(jsonString);
+
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject json_data = data.getJSONObject(i);
+                JSONObject type = json_data.getJSONObject("type");
+                int type_id = type.getInt("id");
+                String type_name = type.getString("name");
+                int id = json_data.getInt("id");
+                String name = json_data.getString("name");
+                String sciName = json_data.getString("scientific_name");
+                String desc = json_data.getString("description");
+                String imageURL = json_data.getString("image");
+                if (type_id == 2) {//type 2 = bird
+                    birdMap.put(new BirdSpecies(name, sciName, desc, id, imageURL), false);
+                }
+            }
+        }catch (JSONException e){
+            Log.i(Constants.TAG, "JSON Exception");
+            e.printStackTrace();
+        }
+        setupBirdListView();
+    }
+
 }
