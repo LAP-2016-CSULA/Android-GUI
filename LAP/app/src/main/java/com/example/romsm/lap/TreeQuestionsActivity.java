@@ -3,6 +3,7 @@ package com.example.romsm.lap;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -483,6 +484,28 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+            File dir = new File(mCurrentPhotoPath);
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            Bitmap rotated = Bitmap.createBitmap(scaled, 0, 0, scaled.getWidth(), scaled.getHeight(), matrix, true);
+            try{
+                FileOutputStream fOut = new FileOutputStream(dir);
+                rotated.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
+                fOut.flush();
+                fOut.close();
+            }catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (out != null) {
+                        out.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
         }
 
         @Override

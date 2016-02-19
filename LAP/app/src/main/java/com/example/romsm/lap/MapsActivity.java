@@ -403,12 +403,6 @@ public class MapsActivity extends AppCompatActivity
                     conn.disconnect();
             }
 
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
             return false;
         }
 
@@ -485,12 +479,6 @@ public class MapsActivity extends AppCompatActivity
                     conn.disconnect();
             }
 
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
             return false;
         }
 

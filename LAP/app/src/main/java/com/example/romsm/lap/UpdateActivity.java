@@ -60,7 +60,7 @@ public class UpdateActivity extends AppCompatActivity {
 
         Picasso img = Picasso.with(this);
         img.setIndicatorsEnabled(true);
-        img.load(tree.getImageURL()).resize(500, 500).centerInside().rotate(90f).into(treeImage, new com.squareup.picasso.Callback() {
+        img.load(tree.getImageURL()).resize(500, 500).centerInside().into(treeImage, new com.squareup.picasso.Callback() {
             @Override
             public void onSuccess() {
                 toggleProgress(false);
