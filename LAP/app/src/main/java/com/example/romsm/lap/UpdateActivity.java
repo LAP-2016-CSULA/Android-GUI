@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -12,6 +13,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
 public class UpdateActivity extends AppCompatActivity {
@@ -58,9 +61,37 @@ public class UpdateActivity extends AppCompatActivity {
         treeSciName.setText(tree.getScientificName());
         treeDesc.setText(tree.getDescription());
 
-        Picasso img = Picasso.with(this);
-        img.setIndicatorsEnabled(true);
-        img.load(tree.getImageURL()).resize(500, 500).centerInside().into(treeImage, new com.squareup.picasso.Callback() {
+        Picasso.with(getApplicationContext())
+                .load(tree.getImageURL())
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .into(treeImage, new Callback() {
+                    @Override
+                    public void onSuccess() {
+                        toggleProgress(false);
+                    }
+
+                    @Override
+                    public void onError() {
+                        //Try again online if cache failed
+                        Picasso.with(getApplicationContext())
+                                .load(tree.getImageURL())
+                                .into(treeImage, new Callback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        toggleProgress(false);
+                                    }
+
+                                    @Override
+                                    public void onError() {
+                                        Log.d(Constants.TAG, "Could not fetch image");
+                                    }
+                                });
+                    }
+                });
+
+        //Picasso img = Picasso.with(this);
+        //img.setIndicatorsEnabled(true);
+        /*img.load(tree.getImageURL()).resize(500, 500).centerInside().into(treeImage, new com.squareup.picasso.Callback() {
             @Override
             public void onSuccess() {
                 toggleProgress(false);
@@ -70,7 +101,7 @@ public class UpdateActivity extends AppCompatActivity {
             public void onError() {
                 toggleProgress(false);
             }
-        });
+        });*/
 
         Button continueButton = (Button) findViewById(R.id.btnContinue);
         continueButton.setOnClickListener(new View.OnClickListener() {
@@ -92,7 +123,6 @@ public class UpdateActivity extends AppCompatActivity {
             tree = db.getTreeInfo(treeID);
             return true;
         }
-
         @Override
         protected void onPostExecute(final Boolean success) {
             if (success) {
