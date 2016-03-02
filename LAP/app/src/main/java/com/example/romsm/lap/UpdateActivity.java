@@ -83,6 +83,7 @@ public class UpdateActivity extends AppCompatActivity {
 
                                     @Override
                                     public void onError() {
+                                        toggleProgress(false);
                                         Log.d(Constants.TAG, "Could not fetch image");
                                     }
                                 });

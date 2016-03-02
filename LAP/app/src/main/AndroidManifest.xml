@@ -62,6 +62,10 @@
         <activity android:name=".AllSpeciesActivity"
             android:screenOrientation="portrait"></activity>
 
+        <service
+            android:name=".UploadTreeQuestionIntentService"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

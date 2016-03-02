@@ -144,7 +144,7 @@ public class TreeSpeciesListActivity extends AppCompatActivity {
         private Boolean getSpeciesList(){
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/species/");
+                URL url = new URL("http://isitso.pythonanywhere.com/treespecies/");
                 conn = (HttpURLConnection) url.openConnection();
                 conn.connect();
 

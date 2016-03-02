@@ -1,9 +1,9 @@
 package com.example.romsm.lap;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -30,14 +30,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -82,6 +78,11 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_questions_list);
 
+        IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        ResponseReceiver receiver = new ResponseReceiver();
+        registerReceiver(receiver, filter);
+
         //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         //setSupportActionBar(myToolbar);
         Intent intent = getIntent();
@@ -116,25 +117,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         ArrayList<String> questionsList = new ArrayList<String>();
         JSONArray data = new JSONArray(jsonString);
 
+        int trueId = 1;
+        int falseId = 2;
+
         for (int i = 0; i < data.length(); i++) {
             JSONObject json_data = data.getJSONObject(i);
             int id = json_data.getInt("id");
             String text = json_data.getString("text");
 
-            JSONArray choices = json_data.getJSONArray("choices");
-            int trueId;
-            int falseId;
-            if(choices.getJSONObject(0).getBoolean("value")){
-                trueId = choices.getJSONObject(0).getInt("id");
-                falseId = choices.getJSONObject(1).getInt("id");
-            }else{
-                trueId = choices.getJSONObject(1).getInt("id");
-                falseId = choices.getJSONObject(0).getInt("id");
-            }
-
             //Log.d(Constants.TAG,"TRUE ID = " + trueId + " FALSE ID = " + falseId + "TEXT = " + text);
             questions.add(new TreeQuestion(trueId, falseId, id, text));
             questionsList.add(text);
+
+            trueId+=2;
+            falseId+=2;
         }
         return questionsList;
     }
@@ -147,12 +143,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView l, View v, int position, long id) {
-                //Object o = lv.getItemAtPosition(position);
-                //Log.d(Constants.TAG, o.toString());
-
-                //CheckedTextView textView = (CheckedTextView)v;
-                //textView.setChecked(!textView.isChecked()
-
                 SparseBooleanArray sparseBooleanArray = lv.getCheckedItemPositions();
                 Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
             }
@@ -161,7 +151,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
     private void setupBirdListView(){
         final ListView blv = (ListView) findViewById(R.id.birdList);
-        ArrayList<BirdSpecies> birdList = new ArrayList<>();
+        final ArrayList<BirdSpecies> birdList = new ArrayList<>();
         for(BirdSpecies birdKey : birdMap.keySet()){
             birdList.add(birdKey);
         }
@@ -174,7 +164,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 SparseBooleanArray sparseBooleanArray = blv.getCheckedItemPositions();
                 CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.speciesName);
                 ctv.toggle();
-                Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
+                //Log.d(Constants.TAG, birdList.get(position).getName()+ " Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
+                birdMap.put(birdList.get(position), sparseBooleanArray.get(position));
+                Log.d(Constants.TAG, birdList.get(position).getName()+ " Clicked Position := " + birdMap.get(birdList.get(position)));
             }
         });
     }
@@ -199,18 +191,54 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 selection();
+
                 if (mCurrentPhotoPath == null) {
                     Toast.makeText(getApplicationContext(), "Please submit a picture of the tree before you move on",
                             Toast.LENGTH_LONG).show();
 
                 } else if (f == false) {
                     showProgress(true);
-                    new UploadTreeTask().execute(); //adds tree and then adds the dailyUpdate -> Goes to bird list activity
-                    //new DbInsertTask().execute();
+                    Intent UploadIntent = new Intent(TreeQuestionsActivity.this, UploadTreeQuestionIntentService.class);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_UPDATE, false);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_LAT, l1);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_LONG, l2);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_SPECIES, tree.getId());
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHNG, 1);
+
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_IMG, mCurrentPhotoPath);
+
+                    int[] answerID = new int[questionsList.size()];
+                    for(int i = 0 ; i < questionsList.size() ; i++ ){
+                        if(answers.get(i)){
+                            answerID[i] = questions.get(i).getTrueID();
+                        }
+                        else{
+                            answerID[i] = questions.get(i).getFalseID();
+                        }
+                    }
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHOICES, answerID);
+
+                    startService(UploadIntent);
+
                 } else {
                     showProgress(true);
                     treeID = tree.getId();
-                    new UploadDailyTask().execute();
+                    Intent UploadIntent = new Intent(TreeQuestionsActivity.this, UploadTreeQuestionIntentService.class);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_UPDATE, true);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_IMG, mCurrentPhotoPath);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_TREE, treeID);
+                    int[] answerID = new int[questionsList.size()];
+                    for(int i = 0 ; i < questionsList.size() ; i++ ){
+                        if(answers.get(i)){
+                            answerID[i] = questions.get(i).getTrueID();
+                        }
+                        else{
+                            answerID[i] = questions.get(i).getFalseID();
+                        }
+                    }
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHOICES, answerID);
+                    startService(UploadIntent);
+
                 }
             }
         });
@@ -376,202 +404,13 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
     }
 
-    public class UploadTreeTask extends AsyncTask<Void, Void, Boolean> {
-
-        HttpURLConnection conn = null;
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            try {
-                URL url = new URL(Constants.POST_TREE_URL);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setReadTimeout(10000);
-                conn.setConnectTimeout(15000);
-                conn.setRequestMethod("POST");
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-
-                Uri.Builder builder = new Uri.Builder()
-                        .appendQueryParameter("long", String.valueOf(l2))
-                        .appendQueryParameter("lat", String.valueOf(l1))
-                        .appendQueryParameter("landmark", null)
-                        .appendQueryParameter("species", String.valueOf(tree.getId()))
-                        .appendQueryParameter("changed_by", String.valueOf(1));
-                String query = builder.build().getEncodedQuery();
-
-                OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(os, "UTF-8"));
-                writer.write(query);
-                writer.flush();
-                writer.close();
-                os.close();
-
-                conn.connect();
-
-                int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "add tree status" + status);
-
-                if (status == 201) {
-                    InputStream is = conn.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                    String responseString;
-                    StringBuilder sb = new StringBuilder();
-                    while ((responseString = reader.readLine()) != null) {
-                        sb = sb.append(responseString);
-                    }
-                    String response= sb.toString();
-                    Log.d(Constants.TAG, "add tree response: " + response);
-
-                    //get newly added tree's id from response json (to be used when sending daily updates)
-                    JSONObject responseJSON = new JSONObject(response);
-                    treeID = responseJSON.getInt("id");
-
-                    return true;
-                }
-            } catch (MalformedURLException e) {
-                Log.i(Constants.TAG, "Malformed Url");
-                e.printStackTrace();
-                return false;
-            } catch (IOException e) {
-                Log.i(Constants.TAG, "IO Exception");
-                e.printStackTrace();
-                return false;
-            } catch (JSONException e) {
-                Log.i(Constants.TAG, "JSON Exception");
-                e.printStackTrace();
-                return false;
-            } finally {
-                if (conn != null)
-                    conn.disconnect();
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            if (success) {
-                new UploadDailyTask().execute();
-            } else {
-                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-
-    public class UploadDailyTask extends AsyncTask<Void, Void, Boolean> {
-
-        int[] answerID = new int[questionsList.size()];
-        String charset = "UTF-8";
-        File treeFile;
-
-        private void reduceImageSize(){
-            Bitmap bitmapImage = BitmapFactory.decodeFile(mCurrentPhotoPath);
-            int nh = (int) ( bitmapImage.getHeight() * (512.0 / bitmapImage.getWidth()) );
-            Bitmap scaled = Bitmap.createScaledBitmap(bitmapImage, 512, nh, true);
-            FileOutputStream out = null;
-            try {
-                out = new FileOutputStream(mCurrentPhotoPath);
-                scaled.compress(Bitmap.CompressFormat.JPEG, 100, out);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (out != null) {
-                        out.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            File dir = new File(mCurrentPhotoPath);
-            Matrix matrix = new Matrix();
-            matrix.postRotate(90);
-            Bitmap rotated = Bitmap.createBitmap(scaled, 0, 0, scaled.getWidth(), scaled.getHeight(), matrix, true);
-            try{
-                FileOutputStream fOut = new FileOutputStream(dir);
-                rotated.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
-                fOut.flush();
-                fOut.close();
-            }catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (out != null) {
-                        out.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-
-            //checks each question's answer and retrieves it's appropriate ID then adds it to answerID array
-            for(int i = 0 ; i < questionsList.size() ; i++ ){
-                if(answers.get(i)){
-                    answerID[i] = questions.get(i).getTrueID();
-                }
-                else{
-                    answerID[i] = questions.get(i).getFalseID();
-                }
-            }
-
-            try {
-                MultipartUtility multipart = new MultipartUtility(Constants.POST_DAILY_UPDATE_URL, charset);
-
-                reduceImageSize();
-                treeFile = new File(mCurrentPhotoPath);
-                multipart.addFilePart("image", treeFile);
-
-                multipart.addFormField("tree", String.valueOf(treeID));
-                multipart.addFormField("changed_by", "1");
-                for(int id : answerID){
-                    multipart.addFormField("choices", String.valueOf(id));
-                }
-                List<String> response = multipart.finish();
-
-                Log.d(Constants.TAG, "add daily updates response: ");
-                for (String line : response) {
-                    Log.d(Constants.TAG, line);
-                }
-
-                if(!response.isEmpty()){
-                    return true;
-                }
-            } catch (IOException e) {
-                Log.i(Constants.TAG, "IO Exception");
-                e.printStackTrace();
-                return false;
-            }
-            return false;
-        }
-
-        @Override
-         protected void onPostExecute(final Boolean success) {
-            showProgress(false);
-            if (success) {
-                Intent mapIntent = new Intent(TreeQuestionsActivity.this, MapsActivity.class);
-                mapIntent.putExtra("userTokens", user);
-                startActivity(mapIntent);
-                finish();
-            } else {
-                Toast.makeText(TreeQuestionsActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
     public class GetBirdListTask extends AsyncTask<Void, Void, Boolean> {
         String jsonResponse;
         @Override
         protected Boolean doInBackground(Void... params) {
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/species/?type_name=bird");
+                URL url = new URL("http://isitso.pythonanywhere.com/bird/");
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("client_id", Constants.CLIENT_ID);
                 conn.setRequestProperty("client_secret", Constants.CLIENT_SECRET);
@@ -632,9 +471,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 String sciName = json_data.getString("scientific_name");
                 String desc = json_data.getString("description");
                 String imageURL = json_data.getString("image");
-                if (type_id == 2) {//type 2 = bird
+                //if (type_id == 2) {//type 2 = bird
                     birdMap.put(new BirdSpecies(name, sciName, desc, id, imageURL), false);
-                }
+                //}
             }
         }catch (JSONException e){
             Log.i(Constants.TAG, "JSON Exception");
@@ -643,4 +482,20 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         setupBirdListView();
     }
 
+
+    public class ResponseReceiver extends BroadcastReceiver {
+        public static final String ACTION_RESP =
+                "com.example.lap.intent.action.MESSAGE_PROCESSED";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String text = intent.getStringExtra(UploadTreeQuestionIntentService.PARAM_OUT_MSG);
+            Toast.makeText(TreeQuestionsActivity.this, text, Toast.LENGTH_LONG).show();
+            //showProgress(false);
+            Intent mapIntent = new Intent(TreeQuestionsActivity.this, MapsActivity.class);
+            mapIntent.putExtra("userTokens", user);
+            startActivity(mapIntent);
+            finish();
+        }
+    }
 }
