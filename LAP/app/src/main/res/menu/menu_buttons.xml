@@ -18,5 +18,11 @@
         android:icon="@drawable/ic_info"
         android:title="@string/action_info"
         app:showAsAction="always"/>
+    <item
+        android:id="@+id/action_plus"
+        android:icon="@drawable/ic_plus"
+        android:title="@string/action_info"
+        app:showAsAction="always"/>
+
 
 </menu>
