@@ -126,8 +126,7 @@ public class MapsActivity extends AppCompatActivity
                     .position(new LatLng(l1, l2))
                     .title(name)
                     .snippet(desc)
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_tree_48dp)));
-
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             markerIDs.put(m,id);
 
             cursor.moveToNext();
