@@ -49,7 +49,13 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * This demo shows how GMS Location can be used to check for changes to the users location.  The
@@ -139,7 +145,7 @@ public class MapsActivity extends AppCompatActivity
         mMap = map;
         //setUpDbMarkers();
 
-        new RetrieveTreesTask().execute();
+        new CheckDBChange().execute();
 
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
@@ -482,6 +488,7 @@ public class MapsActivity extends AppCompatActivity
         }
 
         private void jsonToDB(String jsonString) throws JSONException {
+            Log.d(Constants.TAG,"setting up sqlite db");
             JSONArray data = new JSONArray(jsonString);
 
             MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
@@ -507,15 +514,139 @@ public class MapsActivity extends AppCompatActivity
             dbHelper.close();
         }
 
+        private void setTimeSharedPref(){
+            SharedPreferences settings = getSharedPreferences("time", 0);
+            SharedPreferences.Editor editor = settings.edit();
+            Date now = new Date();
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            editor.putString("lastUpdate", dateFormat.format(now)); //current time
+            editor.commit();
+        }
+
+
         @Override
         protected void onPostExecute(final Boolean success) {
             if (success) {
+                setTimeSharedPref();
                 setUpDbMarkers();
             } else {
                 Toast.makeText(MapsActivity.this, "Something went wrong. Couldn't retrieve pins from server. Try again later.", Toast.LENGTH_LONG).show();
 
             }
         }
+    }
+    /**
+     * Represents an asynchronous task used to check if db has changed since last time. If it has: update sqlite db with changes.
+     */
+    public class CheckDBChange extends AsyncTask<Void, Void, Boolean> {
 
+        HttpURLConnection conn = null;
+        String time = "";
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return checkDB();
+        }
+
+        protected Boolean checkDB() {
+            try {
+                URL url = new URL(Constants.CHECK_DB_UPDATE_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "check db status " + " : " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String sJSON = sb.toString();
+
+                    jsonTime(sJSON);
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            } catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            } catch (JSONException e) {
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+
+            return false;
+        }
+
+        private void jsonTime(String jsonString) throws JSONException {
+            JSONArray data = new JSONArray(jsonString);
+
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject json_data = data.getJSONObject(i);
+
+                String type = json_data.getString("type");
+
+                if(type.equals("Tree")){
+                    time = json_data.getString("time");
+                }
+            }
+
+            Log.d(Constants.TAG,time);
+
+        }
+
+        private boolean isUpToDate(String stringTime){
+            SharedPreferences settings = getSharedPreferences("time", 0);
+            String lastUpdateTime = settings.getString("lastUpdate", null);
+            if(lastUpdateTime == null){
+                return false;
+            }
+            else{
+                try{
+                    Date lastUpdate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(lastUpdateTime);
+                    String modTime = time.substring(0, 19);
+                    modTime +="+00:00";
+                    Date dbTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(modTime);
+
+                    return lastUpdate.after(dbTime);
+
+                }catch (ParseException e){
+                    Log.d(Constants.TAG, "time parse exception");
+                    return false;
+                }
+
+
+            }
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                if(isUpToDate(time)) {
+                    setUpDbMarkers();
+                }
+                else{
+                    new RetrieveTreesTask().execute();
+                }
+
+            } else {
+                Toast.makeText(MapsActivity.this, "Something went wrong. Couldn't update pins. Try again later.", Toast.LENGTH_LONG).show();
+
+            }
+        }
     }
 }
