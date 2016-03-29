@@ -1,11 +1,14 @@
 package com.example.romsm.lap;
 
 import android.content.Intent;
+import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -24,6 +27,9 @@ public class UpdateActivity extends AppCompatActivity {
     private UserAccount user;
     private int treeID;
     private TreeSpecies tree;
+    float scale=1f;
+    ScaleGestureDetector scaleGDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,8 +46,9 @@ public class UpdateActivity extends AppCompatActivity {
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
         treeID = intent.getIntExtra("treeID", 0);
-
+        scaleGDetector=new ScaleGestureDetector(this, new ScaleListener());
         toggleProgress(true);
+
         new GetTreeInfoTask().execute();
     }
 
@@ -54,6 +61,53 @@ public class UpdateActivity extends AppCompatActivity {
             progress.setVisibility(View.GONE);
             treeImage.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+
+    public boolean onTouchEvent(MotionEvent ev) {
+
+        scaleGDetector.onTouchEvent(ev);
+
+        return true;
+
+    }
+    private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener{
+
+        public boolean onScaleBegin(ScaleGestureDetector sgd){
+
+
+
+            return true;
+
+
+
+        }
+
+        public void onScaleEnd(ScaleGestureDetector sgd){
+
+
+
+        }
+
+        public boolean onScale(ScaleGestureDetector sgd){
+
+            // Multiply scale factor
+
+            scale*= sgd.getScaleFactor();
+
+            // Scale or zoom the imageview
+
+            treeImage.setScaleX(scale);
+
+            treeImage.setScaleY(scale);
+
+            Log.i("Main",String.valueOf(scale));
+
+            return true;
+
+        }
+
     }
 
     private void setUpInfo(){
