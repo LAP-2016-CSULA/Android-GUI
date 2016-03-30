@@ -234,7 +234,8 @@ public class MapsActivity extends AppCompatActivity
         Location mylocation = locationManager.getLastKnownLocation(provider);
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         if (mylocation != null) {
-            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            criteria.setPowerRequirement(Criteria.POWER_MEDIUM);
             double latitude = mylocation.getLatitude();
             double longitude = mylocation.getLongitude();
             LatLng latlng = new LatLng(latitude, longitude);
