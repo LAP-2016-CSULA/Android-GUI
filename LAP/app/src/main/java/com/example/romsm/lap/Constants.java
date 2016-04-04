@@ -10,6 +10,7 @@ public class Constants {
     public static final String POST_DAILY_UPDATE_URL = "http://isitso.pythonanywhere.com/dailyupdates/";
     public static final String CHECK_DB_UPDATE_URL = "http://isitso.pythonanywhere.com/checkdb/";
     public static final String GET_TREE_SPECIES_URL = "http://isitso.pythonanywhere.com/treespecies/";
+    public static final String GET_BIRDS_LIST_URL = "http://isitso.pythonanywhere.com/birds/";
 
     public static final String TAG = "mycode";
 }

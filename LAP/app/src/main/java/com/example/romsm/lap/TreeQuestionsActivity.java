@@ -410,7 +410,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/bird/");
+                URL url = new URL(Constants.GET_BIRDS_LIST_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("client_id", Constants.CLIENT_ID);
                 conn.setRequestProperty("client_secret", Constants.CLIENT_SECRET);
