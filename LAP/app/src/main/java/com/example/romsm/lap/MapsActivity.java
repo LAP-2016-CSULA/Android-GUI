@@ -19,9 +19,11 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -86,6 +88,10 @@ public class MapsActivity extends AppCompatActivity
 
     private UserAccount user;
     private ImageView treeImage;
+    private int positionX = 1000;
+    private int positionY = 300;
+    private int width = 20;
+    private int height =20;
 
     private HashMap<Marker, Integer> markerIDs;
 
@@ -341,6 +347,65 @@ public class MapsActivity extends AppCompatActivity
                 Intent intent = getIntent();
                 finish();
                 startActivity(intent);
+                return true;
+            case R.id.action_plus:
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    return false;
+                }
+                mMap.setMyLocationEnabled(true);
+                LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+                Criteria criteria = new Criteria();
+                String provider = locationManager.getBestProvider(criteria, true);
+
+                final Location mylocation = locationManager.getLastKnownLocation(provider);
+                mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                if (mylocation != null) {
+                    criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                    criteria.setPowerRequirement(Criteria.POWER_MEDIUM);
+                    double latitude = mylocation.getLatitude();
+                    double longitude = mylocation.getLongitude();
+                    LatLng latlng = new LatLng(latitude, longitude);
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(20));
+
+                }
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+
+
+                final AlertDialog.Builder builder1 = builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked OK button
+                        new RetrieveTreesTask().execute();
+                        setUpDbMarkers();
+                        Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
+                        listIntent.putExtra("userTokens", user);
+                        double l1 = mylocation.getLatitude();
+                        double l2 = mylocation.getLongitude();
+                        listIntent.putExtra("lat", l1);
+                        listIntent.putExtra("long", l2);
+                        startActivity(listIntent);
+
+                    }
+                });
+                builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
+                builder.setMessage(R.string.add_tree_on_top)
+                        .setTitle(R.string.app_name);
+                AlertDialog dialog = builder.create();
+                WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
+                layoutParams.gravity = Gravity.BOTTOM | Gravity.LEFT;
+                dialog.getWindow().setAttributes(layoutParams);
+                layoutParams.x =positionX;
+                layoutParams.y = positionY;
+                layoutParams.width = width;
+                layoutParams.height = height;
+                dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                dialog.show();
+
                 return true;
 
             default:
