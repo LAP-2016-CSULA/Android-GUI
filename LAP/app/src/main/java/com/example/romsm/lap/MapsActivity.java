@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -29,6 +30,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.romsm.lap.model.MarkerGroup;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
@@ -73,6 +75,7 @@ import java.util.TimeZone;
  */
 public class MapsActivity extends AppCompatActivity
         implements
+        LocationListener,
         OnMyLocationButtonClickListener,
         OnMapReadyCallback,
         ActivityCompat.OnRequestPermissionsResultCallback {
@@ -98,6 +101,8 @@ public class MapsActivity extends AppCompatActivity
     private int positionY = 300;
     private int width = 20;
     private int height =20;
+    private static final long MIN_TIME = 100;
+    private static final float MIN_DISTANCE = 500;
 
     private HashMap<Marker, Integer> markerIDs;
     private HashMap<Marker, MarkerGroup> markerGroupsMap;
@@ -251,6 +256,7 @@ public class MapsActivity extends AppCompatActivity
             return;
         }
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, this);
         Criteria criteria = new Criteria();
         Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
 
@@ -365,7 +371,18 @@ public class MapsActivity extends AppCompatActivity
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            return;
+        }
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, this);
 
+
+    }
 
 
     // Initiating Menu XML file (menu.xml)
@@ -473,6 +490,45 @@ public class MapsActivity extends AppCompatActivity
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        String provider = locationManager.getBestProvider(criteria, true);
+        final Location mylocation = locationManager.getLastKnownLocation(provider);
+      //  locationManager.removeUpdates(this);
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        if (mylocation != null) {
+            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            criteria.setPowerRequirement(Criteria.POWER_MEDIUM);
+            double latitude = mylocation.getLatitude();
+            double longitude = mylocation.getLongitude();
+            LatLng latlng = new LatLng(latitude, longitude);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlng, 20);
+            mMap.animateCamera(cameraUpdate);
+        }
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     /**
