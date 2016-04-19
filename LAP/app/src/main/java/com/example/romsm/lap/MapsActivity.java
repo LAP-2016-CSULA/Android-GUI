@@ -3,6 +3,7 @@ package com.example.romsm.lap;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -27,10 +28,12 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.romsm.lap.model.MarkerGroup;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -52,11 +55,14 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -94,6 +100,7 @@ public class MapsActivity extends AppCompatActivity
     private int height =20;
 
     private HashMap<Marker, Integer> markerIDs;
+    private HashMap<Marker, MarkerGroup> markerGroupsMap;
 
     Cursor cursor;
 
@@ -104,7 +111,7 @@ public class MapsActivity extends AppCompatActivity
 
         Intent intent = getIntent();
         user = (UserAccount) intent.getSerializableExtra("userTokens");
-        Log.i(Constants.TAG, user.getAccessToken()+"");
+        Log.i(Constants.TAG, user.getAccessToken() + "");
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -144,6 +151,8 @@ public class MapsActivity extends AppCompatActivity
             cursor.moveToNext();
         }
         cursor.close();
+
+        groupMarkers();
     }
 
     @Override
@@ -158,31 +167,31 @@ public class MapsActivity extends AppCompatActivity
             @Override
             public void onMapLongClick(LatLng latLng) {
 
-                    final LatLng location = latLng;
-                    //Show dialog asking user if they want to add a tree
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User clicked OK button
+                final LatLng location = latLng;
+                //Show dialog asking user if they want to add a tree
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked OK button
 
-                            Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
-                            listIntent.putExtra("userTokens", user);
-                            double l1 = location.latitude;
-                            double l2 = location.longitude;
-                            listIntent.putExtra("lat", l1);
-                            listIntent.putExtra("long", l2);
-                            startActivity(listIntent);
-                        }
-                    });
-                    builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog
-                        }
-                    });
-                    builder.setMessage(R.string.add_tree_here)
-                            .setTitle(R.string.app_name);
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
+                        Intent listIntent = new Intent(MapsActivity.this, TreeSpeciesListActivity.class);
+                        listIntent.putExtra("userTokens", user);
+                        double l1 = location.latitude;
+                        double l2 = location.longitude;
+                        listIntent.putExtra("lat", l1);
+                        listIntent.putExtra("long", l2);
+                        startActivity(listIntent);
+                    }
+                });
+                builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
+                builder.setMessage(R.string.add_tree_here)
+                        .setTitle(R.string.app_name);
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         });
 
@@ -195,19 +204,30 @@ public class MapsActivity extends AppCompatActivity
 
             @Override
             public void onInfoWindowClick(Marker marker) {
-                //   using info class to test
+                if (marker.getTitle().equals("Group of Trees")) {
+                    Intent intent = new Intent(MapsActivity.this, GroupedTreesList.class);
+                    intent.putExtra("userTokens", user);
+                    MarkerGroup mg = markerGroupsMap.get(marker);
+                    HashMap<Marker, Integer> mp = mg.getMarkerMap();
+                    ArrayList<Integer> treeids = new ArrayList<>();
+                    Iterator it = mp.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        treeids.add((Integer) pair.getValue());
+                    }
+                    intent.putExtra("groupTreeList", treeids);
+                    startActivity(intent);
+                } else {
+                    MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
+                    int treeID = dbHelper.getTreeID(markerIDs.get(marker));
+                    Intent intent = new Intent(MapsActivity.this, UpdateActivity.class);
+                    intent.putExtra("userTokens", user);
+                    intent.putExtra("treeID", treeID);
+                    startActivity(intent);
+                }
 
-                MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
-                int treeID = dbHelper.getTreeID(markerIDs.get(marker));
-                //Log.d(Constants.TAG, "id: " + markerIDs.get(marker)+ " tree id: " + treeID);
-                Intent intent = new Intent(MapsActivity.this, UpdateActivity.class);
-                intent.putExtra("userTokens", user);
-                intent.putExtra("treeID", treeID);
-                startActivity(intent);
             }
         });
-        {
-        }
     }
 
     /**
@@ -227,27 +247,73 @@ public class MapsActivity extends AppCompatActivity
     }
 
     private void setUpMap() {
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
             return;
         }
-        mMap.setMyLocationEnabled(true);
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-        String provider = locationManager.getBestProvider(criteria, true);
+        Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
 
-        Location mylocation = locationManager.getLastKnownLocation(provider);
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        if (mylocation != null) {
-            criteria.setAccuracy(Criteria.ACCURACY_FINE);
-            criteria.setPowerRequirement(Criteria.POWER_MEDIUM);
-            double latitude = mylocation.getLatitude();
-            double longitude = mylocation.getLongitude();
-            LatLng latlng = new LatLng(latitude, longitude);
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(20));
+        if (location != null)
+        {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                    new LatLng(location.getLatitude(), location.getLongitude()), 13));
 
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                    .zoom(18)                   // Sets the zoom
+                    .build();                   // Creates a CameraPosition from the builder
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+        }
+    }
+
+    public void groupMarkers(){
+        ArrayList<Marker> markr = new ArrayList<>();
+        ArrayList<MarkerGroup>markerGroups = new ArrayList<>();
+        Iterator it = markerIDs.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            markr.add((Marker) pair.getKey());
+            //it.remove(); // avoids a ConcurrentModificationException
+        }
+
+        for (Marker m : markr) {
+            if(!m.isVisible()){
+                continue;
+            }
+            MarkerGroup mg = new MarkerGroup(m, markerIDs.get(m));
+
+            for (Marker m2 : markr) {
+                if(mg.contains(m2) || !m2.isVisible()){
+                    continue;
+                }
+                Location loc1 = new Location("");
+                Location loc2 = new Location("");
+                loc1.setLongitude(mg.getLongitude());
+                loc1.setLatitude(mg.getLatitude());
+                loc2.setLatitude(m2.getPosition().latitude);
+                loc2.setLongitude(m2.getPosition().longitude);
+
+                if(loc1.distanceTo(loc2) < 6){
+                    mg.addMaker(m2, markerIDs.get(m2));
+                    m2.setVisible(false);
+                }
+            }
+            if (mg.getGroupSize() != 1){
+                markerGroups.add(mg);
+                m.setVisible(false);
+            }
+        }
+        markerGroupsMap = new HashMap<>();
+        for(MarkerGroup mg : markerGroups){
+            Marker m = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(mg.getLatitude(), mg.getLongitude()))
+                    .title("Group of Trees")
+                    .snippet(mg.getGroupSize() + " trees")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            markerGroupsMap.put(m,mg);
         }
 
     }
@@ -339,15 +405,8 @@ public class MapsActivity extends AppCompatActivity
                 return true;
 
             case R.id.action_user:
-                //debug: remove trees
-                MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
-                dbHelper.clearTable();
-                dbHelper.close();
-                //restart activity
-                Intent intent = getIntent();
-                finish();
-                startActivity(intent);
                 return true;
+            
             case R.id.action_plus:
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     // TODO: Consider calling

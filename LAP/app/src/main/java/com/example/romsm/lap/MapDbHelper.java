@@ -87,12 +87,23 @@ public class MapDbHelper extends SQLiteOpenHelper{
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(MapContract.MapEntry.TABLE_NAME, new String[]{ MapContract.MapEntry.TREE_NAME, MapContract.MapEntry.TREE_SCI_NAME, MapContract.MapEntry.TREE_DESC, MapContract.MapEntry.TREE_IMAGE_URL }, MapContract.MapEntry.TREE_ID + "=?", new String[]{String.valueOf(treeID)}, null, null, null, null);
         if(cursor != null){
-            cursor.moveToFirst();
+            if(cursor.moveToFirst()){
+                return new TreeSpecies(cursor.getString(0),cursor.getString(1),cursor.getString(2),treeID,cursor.getString(3));
+            }
         }
-
-        return new TreeSpecies(cursor.getString(0),cursor.getString(1),cursor.getString(2),treeID,cursor.getString(3));
+        return null;
     }
 
+    public TreeSpecies getTreeInfoFromID(int _id){
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(MapContract.MapEntry.TABLE_NAME, new String[]{ MapContract.MapEntry.TREE_NAME, MapContract.MapEntry.TREE_SCI_NAME, MapContract.MapEntry.TREE_DESC, MapContract.MapEntry.TREE_ID, MapContract.MapEntry.TREE_IMAGE_URL }, MapContract.MapEntry._ID + "=?", new String[]{String.valueOf(_id)}, null, null, null, null);
+        if(cursor != null){
+            if(cursor.moveToFirst()){
+                return new TreeSpecies(cursor.getString(0),cursor.getString(1),cursor.getString(2),cursor.getInt(3),cursor.getString(4));
+            }
+        }
+        return null;
+    }
     public void clearTable() {
         SQLiteDatabase db = getWritableDatabase();
         db.execSQL("delete from " + MapContract.MapEntry.TABLE_NAME);

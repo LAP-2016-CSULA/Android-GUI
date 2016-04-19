@@ -31,11 +31,12 @@ public class UploadTreeQuestionIntentService extends IntentService {
     public static final String PARAM_IN_LAT = "ilat"; //latitude
     public static final String PARAM_IN_LONG = "ilong"; //longitude
     public static final String PARAM_IN_SPECIES = "ispc"; //species id
-    public static final String PARAM_IN_CHNG = "ichng"; //changed_by
+    //public static final String PARAM_IN_CHNG = "ichng"; //changed_by
 
     public static final String PARAM_IN_IMG = "iimg"; //image path
     public static final String PARAM_IN_TREE = "itree"; //tree id
     public static final String PARAM_IN_CHOICES = "ichoices"; //choices
+    public static final String PARAM_IN_BIRDS = "ibirds"; //birds
 
     public static final String PARAM_OUT_MSG = "omsg"; //outgoing message
     public static final String PARAM_OUT_BOOL = "obool"; //outgoing error?
@@ -51,11 +52,12 @@ public class UploadTreeQuestionIntentService extends IntentService {
         double lat = intent.getDoubleExtra(PARAM_IN_LAT, 0);
         double lng = intent.getDoubleExtra(PARAM_IN_LONG, 0);
         int species = intent.getIntExtra(PARAM_IN_SPECIES, 1);
-        int changed_by = intent.getIntExtra(PARAM_IN_CHNG, 1);
+        //int changed_by = intent.getIntExtra(PARAM_IN_CHNG, 1);
 
         String imagePath = intent.getStringExtra(PARAM_IN_IMG);
         int treeID = intent.getIntExtra(PARAM_IN_TREE, 0);
         int[] choices = intent.getIntArrayExtra(PARAM_IN_CHOICES);
+        int[] birds = intent.getIntArrayExtra(PARAM_IN_BIRDS);
 
         boolean isComplete = false;
 
@@ -73,9 +75,9 @@ public class UploadTreeQuestionIntentService extends IntentService {
                 Uri.Builder builder = new Uri.Builder()
                         .appendQueryParameter("long", String.valueOf(lng))
                         .appendQueryParameter("lat", String.valueOf(lat))
-                        .appendQueryParameter("landmark", null)
-                        .appendQueryParameter("species", String.valueOf(species))
-                        .appendQueryParameter("changed_by", String.valueOf(changed_by));
+                        //.appendQueryParameter("landmark", null)
+                        .appendQueryParameter("species", String.valueOf(species));
+                        //.appendQueryParameter("changed_by", String.valueOf(changed_by));
                 String query = builder.build().getEncodedQuery();
 
                 OutputStream os = conn.getOutputStream();
@@ -135,10 +137,19 @@ public class UploadTreeQuestionIntentService extends IntentService {
             multipart.addFilePart("image", treeFile);
 
             multipart.addFormField("tree", String.valueOf(treeID));
-            multipart.addFormField("changed_by", String.valueOf(changed_by));
+            Log.d(Constants.TAG, "tree id: " + treeID);
+            //multipart.addFormField("changed_by", String.valueOf(changed_by));
+
             for(int id : choices){
-                multipart.addFormField("choices", String.valueOf(id));
-                Log.d(Constants.TAG, "choice[" + id+"]");
+                //multipart.addFormField("choices", String.valueOf(id));
+                Log.d(Constants.TAG, "choices[" + id+"]");
+            }
+
+            for(int birdId: birds){
+                if(birdId != -1){
+                    multipart.addFormField("birds", String.valueOf(birdId));
+                    Log.d(Constants.TAG, "birds["+ birdId+"]");
+                }
             }
             List<String> response = multipart.finish();
 

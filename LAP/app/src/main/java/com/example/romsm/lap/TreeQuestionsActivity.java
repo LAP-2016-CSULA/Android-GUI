@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class TreeQuestionsActivity extends AppCompatActivity {
@@ -69,6 +70,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     //birdMap has all species of birds as key and true/false as value
     HashMap<BirdSpecies, Boolean> birdMap = new HashMap<>();
 
+    ResponseReceiver receiver;
 
     //id of tree that is about to be added (is used when submiting dailyUpdate)
     int treeID;
@@ -77,11 +79,6 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_questions_list);
-
-        IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        ResponseReceiver receiver = new ResponseReceiver();
-        registerReceiver(receiver, filter);
 
         //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         //setSupportActionBar(myToolbar);
@@ -135,6 +132,33 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         return questionsList;
     }
 
+    @Override
+    protected void onStop(){
+        super.onStop();
+        try{
+            unregisterReceiver(receiver);
+        }catch (IllegalArgumentException e){
+
+        }
+
+    }
+    @Override
+    protected void onPause(){
+        super.onPause();
+        try{
+            unregisterReceiver(receiver);
+        }catch (IllegalArgumentException e){
+
+        }
+    }
+    @Override
+    protected void onResume(){
+        super.onResume();
+        IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        receiver = new ResponseReceiver();
+        registerReceiver(receiver, filter);
+    }
     private void setupListView() {
         setupButton();
         final ListView lv = (ListView) findViewById(R.id.treeQuestionsList);
@@ -203,7 +227,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_LAT, l1);
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_LONG, l2);
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_SPECIES, tree.getId());
-                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHNG, 1);
+                    //UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHNG, 1);
 
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_IMG, mCurrentPhotoPath);
 
@@ -216,8 +240,21 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                             answerID[i] = questions.get(i).getFalseID();
                         }
                     }
-                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHOICES, answerID);
 
+                    int birdsID[] = new int[birdMap.size()];
+                    int birdIter = 0;
+                    for (Map.Entry<BirdSpecies, Boolean> entry : birdMap.entrySet())
+                    {
+                        if (entry.getValue()){
+                            birdsID[birdIter] = entry.getKey().getId();
+                        }
+                        else{
+                            birdsID[birdIter] = -1;
+                        }
+                        birdIter++;
+                    }
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHOICES, answerID);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_BIRDS, birdsID);
                     startService(UploadIntent);
 
                 } else {
@@ -236,9 +273,21 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                             answerID[i] = questions.get(i).getFalseID();
                         }
                     }
+                    int birdsID[] = new int[birdMap.size()];
+                    int birdIter = 0;
+                    for (Map.Entry<BirdSpecies, Boolean> entry : birdMap.entrySet())
+                    {
+                        if (entry.getValue()){
+                            birdsID[birdIter] = entry.getKey().getId();
+                        }
+                        else{
+                            birdsID[birdIter] = -1;
+                        }
+                        birdIter++;
+                    }
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_CHOICES, answerID);
+                    UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_BIRDS, birdsID);
                     startService(UploadIntent);
-
                 }
             }
         });
@@ -418,7 +467,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 conn.connect();
 
                 int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "species status " + status);
+                Log.d(Constants.TAG, "bird status " + status);
 
                 if (status == 200) {
                     InputStream is = conn.getInputStream();
@@ -471,9 +520,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 String sciName = json_data.getString("scientific_name");
                 String desc = json_data.getString("description");
                 String imageURL = json_data.getString("image");
-                //if (type_id == 2) {//type 2 = bird
-                    birdMap.put(new BirdSpecies(name, sciName, desc, id, imageURL), false);
-                //}
+
+                birdMap.put(new BirdSpecies(name, sciName, desc, id, imageURL), false);
             }
         }catch (JSONException e){
             Log.i(Constants.TAG, "JSON Exception");

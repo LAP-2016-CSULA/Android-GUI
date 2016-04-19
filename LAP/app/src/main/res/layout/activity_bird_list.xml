@@ -26,7 +26,7 @@
         android:choiceMode="multipleChoice"
         android:layout_below="@id/question_textview"
         android:drawSelectorOnTop="false"
-        android:layout_above="@+id/enter_button" />
+        android:layout_above="@+id/enter_bird_button" />
 
     <Button
         android:layout_width="wrap_content"

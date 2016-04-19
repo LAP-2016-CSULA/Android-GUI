@@ -59,6 +59,8 @@
             android:screenOrientation="portrait"/>
         <activity android:name=".UpdateActivity"
             android:screenOrientation="portrait"/>
+        <activity android:name=".GroupedTreesList"
+            android:screenOrientation="portrait"/>
         <activity android:name=".AllSpeciesActivity"
             android:screenOrientation="portrait"></activity>
 
