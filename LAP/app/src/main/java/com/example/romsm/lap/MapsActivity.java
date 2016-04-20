@@ -256,15 +256,15 @@ public class MapsActivity extends AppCompatActivity
             return;
         }
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, this);
         Criteria criteria = new Criteria();
         Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, this);
 
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         if (location != null)
         {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                    new LatLng(location.getLatitude(), location.getLongitude()), 13));
+                    new LatLng(location.getLatitude(), location.getLongitude()), 22));
 
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
@@ -273,6 +273,7 @@ public class MapsActivity extends AppCompatActivity
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
         }
+
     }
 
     public void groupMarkers(){
@@ -443,7 +444,7 @@ public class MapsActivity extends AppCompatActivity
                     double longitude = mylocation.getLongitude();
                     LatLng latlng = new LatLng(latitude, longitude);
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
-                    mMap.animateCamera(CameraUpdateFactory.zoomTo(20));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(22));
 
                 }
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
@@ -501,18 +502,22 @@ public class MapsActivity extends AppCompatActivity
         mMap.setMyLocationEnabled(true);
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
+        locationManager.removeUpdates(this);
         String provider = locationManager.getBestProvider(criteria, true);
         final Location mylocation = locationManager.getLastKnownLocation(provider);
-      //  locationManager.removeUpdates(this);
+         locationManager.removeUpdates(this);
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        if (mylocation != null) {
-            criteria.setAccuracy(Criteria.ACCURACY_FINE);
-            criteria.setPowerRequirement(Criteria.POWER_MEDIUM);
-            double latitude = mylocation.getLatitude();
-            double longitude = mylocation.getLongitude();
-            LatLng latlng = new LatLng(latitude, longitude);
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlng, 20);
-            mMap.animateCamera(cameraUpdate);
+        if (location != null)
+        {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                    new LatLng(location.getLatitude(), location.getLongitude()), 22));
+
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                    .zoom(18)                   // Sets the zoom
+                    .build();                   // Creates a CameraPosition from the builder
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
         }
     }
 
