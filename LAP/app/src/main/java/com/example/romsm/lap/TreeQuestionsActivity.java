@@ -114,20 +114,26 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         ArrayList<String> questionsList = new ArrayList<String>();
         JSONArray data = new JSONArray(jsonString);
 
-        int trueId = 1;
-        int falseId = 2;
-
         for (int i = 0; i < data.length(); i++) {
             JSONObject json_data = data.getJSONObject(i);
             int id = json_data.getInt("id");
             String text = json_data.getString("text");
 
-            //Log.d(Constants.TAG,"TRUE ID = " + trueId + " FALSE ID = " + falseId + "TEXT = " + text);
+            JSONArray choices = json_data.getJSONArray("choices");
+            int trueId;
+            int falseId;
+            if(choices.getJSONObject(0).getBoolean("value")){
+                trueId = choices.getJSONObject(0).getInt("id");
+                falseId = choices.getJSONObject(1).getInt("id");
+            }
+            else{
+                trueId = choices.getJSONObject(1).getInt("id");
+                falseId = choices.getJSONObject(0).getInt("id");
+            }
+
+            //Log.d(Constants.TAG, "TRUE ID = " + trueId + " FALSE ID = " + falseId + "TEXT = " + text);
             questions.add(new TreeQuestion(trueId, falseId, id, text));
             questionsList.add(text);
-
-            trueId+=2;
-            falseId+=2;
         }
         return questionsList;
     }
@@ -204,6 +210,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private void showProgress(final boolean show) {
         progress.setVisibility(show ? View.VISIBLE : View.GONE);
         lvQuestions.setVisibility(show ? View.GONE : View.VISIBLE);
+        lvBirds.setVisibility(show ? View.GONE : View.VISIBLE);
         btnPhoto.setVisibility(show ? View.GONE : View.VISIBLE);
         btnSubmit.setVisibility(show ? View.GONE : View.VISIBLE);
     }

@@ -141,11 +141,11 @@ public class UploadTreeQuestionIntentService extends IntentService {
             //multipart.addFormField("changed_by", String.valueOf(changed_by));
 
             for(int id : choices){
-                //multipart.addFormField("choices", String.valueOf(id));
+                multipart.addFormField("choices", String.valueOf(id));
                 Log.d(Constants.TAG, "choices[" + id+"]");
             }
 
-            for(int birdId: birds){
+            for(int birdId : birds){
                 if(birdId != -1){
                     multipart.addFormField("birds", String.valueOf(birdId));
                     Log.d(Constants.TAG, "birds["+ birdId+"]");
