@@ -40,14 +40,20 @@
             android:layout_below="@+id/nameText"
             android:layout_centerHorizontal="true" />
 
-        <TextView
+        <ScrollView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description"
-            android:id="@+id/descriptionText"
-            android:gravity="center"
             android:layout_below="@+id/sciNameText"
-            android:layout_centerHorizontal="true" />
+            android:id="@+id/descriptionScroll"
+            android:gravity="center"
+            android:layout_centerHorizontal="true"
+            android:layout_height="35dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Description"
+                android:id="@+id/descriptionText"
+                android:gravity="center"/>
+        </ScrollView>
 
         <ImageView
             android:layout_width="match_parent"
@@ -58,7 +64,7 @@
             android:contentDescription="tree"
             android:layout_centerHorizontal="true"
             android:layout_above="@+id/btnContinue"
-            android:layout_below="@+id/descriptionText"
+            android:layout_below="@+id/descriptionScroll"
             android:visibility="gone"/>
 
         <ProgressBar
