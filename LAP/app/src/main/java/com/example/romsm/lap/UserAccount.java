@@ -9,7 +9,7 @@ import java.io.Serializable;
 
 public class UserAccount implements Serializable {
     private String accessToken, refreshToken, tokenType, scope, expiresIn, username;
-    private Boolean isStaff, isSuperUser;
+    private Boolean isStaff, isSuperUser, isGuest;
 
     public UserAccount(String jsonString) throws JSONException {
         JSONObject jsonUser = new JSONObject(jsonString);
@@ -66,7 +66,19 @@ public class UserAccount implements Serializable {
         setUsername((String) jsonUser.optString("username"));
         setIsStaff(jsonUser.optBoolean("is_staff"));
         setIsSuperUser(jsonUser.optBoolean("is_superuser"));
+        if (username.toLowerCase().equals("guest")){
+            setIsGuest(true);
+        }
+        else{
+            setIsGuest(false);
+        }
+    }
 
+    public Boolean getIsGuest() {
+        return isGuest;
+    }
 
+    public void setIsGuest(Boolean isGuest) {
+        this.isGuest = isGuest;
     }
 }

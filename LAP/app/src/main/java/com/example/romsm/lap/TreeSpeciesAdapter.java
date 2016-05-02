@@ -31,7 +31,7 @@ public class TreeSpeciesAdapter extends ArrayAdapter<TreeSpecies> {
 
         Picasso img = Picasso.with(getContext());
         img.setIndicatorsEnabled(true);
-        img.load(species.getImageURL()).into(treeImg);
+        img.load(species.getImageURL()).resize(150,180).centerCrop().into(treeImg);
 
         // Return the completed view to render on screen
         return convertView;

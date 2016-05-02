@@ -24,8 +24,8 @@ public class TreeInfoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_info);
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
+        //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        //setSupportActionBar(myToolbar);
 
         Intent intent = getIntent();
 
@@ -59,6 +59,10 @@ public class TreeInfoActivity extends AppCompatActivity {
         });
 
         Button continueButton = (Button) findViewById(R.id.btnContinue);
+        if (user.getIsGuest()){
+            continueButton.setEnabled(false);
+            continueButton.setText("Sign-in to add tree");
+        }
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -49,12 +49,14 @@ public class LoginActivity extends AppCompatActivity {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private TextView guestLogin;
 
     //Will contain user's tokens
     UserAccount user;
     String access_token;
     String refresh_token;
 
+    private boolean guest = false;
     private boolean isLoggedIn;
 
     @Override
@@ -89,6 +91,15 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        guestLogin = (TextView)findViewById(R.id.guest_view);
+        guestLogin.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                guest = true;
+                attemptLogin();
+            }
+        });
 
         //Get saved tokens if any
         getSharedPref();
@@ -138,6 +149,13 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
+        if(guest){
+            showProgress(true);
+            mAuthTask = new UserLoginTask("guest", "guest123456789101112LAP");
+            mAuthTask.execute((Void) null);
+            return;
+        }
+
         if (mAuthTask != null) {
             return;
         }
@@ -390,7 +408,9 @@ public class LoginActivity extends AppCompatActivity {
         protected void onPostExecute(final Boolean success) {
             showProgress(false);
             if (success) {
-                setTokensAsSharedPref(user.getAccessToken(), user.getRefreshToken());
+                if(!guest){
+                    setTokensAsSharedPref(user.getAccessToken(), user.getRefreshToken());
+                }
                 Intent mapIntent = new Intent(LoginActivity.this, MapsActivity.class);
                 mapIntent.putExtra("userTokens", user);
                 startActivity(mapIntent);

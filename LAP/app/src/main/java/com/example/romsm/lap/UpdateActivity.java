@@ -34,8 +34,8 @@ public class UpdateActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tree_info);
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
+        //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        //setSupportActionBar(myToolbar);
 
         treeName = (TextView)findViewById(R.id.nameText);
         treeSciName = (TextView)findViewById(R.id.sciNameText);
@@ -159,6 +159,10 @@ public class UpdateActivity extends AppCompatActivity {
         });*/
 
         Button continueButton = (Button) findViewById(R.id.btnContinue);
+        if (user.getIsGuest()){
+            continueButton.setEnabled(false);
+            continueButton.setText("Sign-in to update");
+        }
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -176,6 +180,7 @@ public class UpdateActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             MapDbHelper db = new MapDbHelper(getApplicationContext());
             tree = db.getTreeInfo(treeID);
+            db.close();
             return true;
         }
         @Override

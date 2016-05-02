@@ -14,6 +14,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -168,12 +169,16 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private void setupListView() {
         setupButton();
         final ListView lv = (ListView) findViewById(R.id.treeQuestionsList);
-        lv.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, questionsList));
+        QuestionListAdapter questionAdapter = new QuestionListAdapter(this, questionsList);
+        lv.setAdapter(questionAdapter);
+        //lv.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, questionsList));
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView l, View v, int position, long id) {
                 SparseBooleanArray sparseBooleanArray = lv.getCheckedItemPositions();
+                CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.questionView);
+                ctv.toggle();
                 Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
             }
         });

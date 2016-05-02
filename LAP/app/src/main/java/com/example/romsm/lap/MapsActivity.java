@@ -128,6 +128,7 @@ public class MapsActivity extends AppCompatActivity
     }
 
     private void setUpDbMarkers(){
+        mMap.clear();
         markerIDs = new HashMap<>();
         MapDbHelper dbHelper = new MapDbHelper(getApplicationContext());
         cursor = dbHelper.getAllRows();
@@ -402,6 +403,9 @@ public class MapsActivity extends AppCompatActivity
         if(user.getIsSuperUser()){
             group = "Admin";
         }
+        if(user.getIsGuest()){
+            group = "Guest";
+        }
         usernameItem.setTitle(user.getUsername()+" : " + group);
         return true;
     }
@@ -627,10 +631,10 @@ public class MapsActivity extends AppCompatActivity
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return retriveTree();
+            return retrieveTree();
         }
 
-        protected Boolean retriveTree(){
+        protected Boolean retrieveTree(){
             try {
                 URL url = new URL(Constants.POST_TREE_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -791,7 +795,7 @@ public class MapsActivity extends AppCompatActivity
                 }
             }
 
-            Log.d(Constants.TAG,time);
+            Log.d(Constants.TAG, time);
 
         }
 
@@ -814,8 +818,6 @@ public class MapsActivity extends AppCompatActivity
                     Log.d(Constants.TAG, "time parse exception");
                     return false;
                 }
-
-
             }
         }
 
@@ -823,7 +825,8 @@ public class MapsActivity extends AppCompatActivity
         protected void onPostExecute(final Boolean success) {
             if (success) {
                 if(isUpToDate(time)) {
-                    setUpDbMarkers();
+                    //setUpDbMarkers();
+                    new DeleteTrees().execute();
                 }
                 else{
                     new RetrieveTreesTask().execute();
@@ -831,6 +834,92 @@ public class MapsActivity extends AppCompatActivity
 
             } else {
                 Toast.makeText(MapsActivity.this, "Something went wrong. Couldn't update pins. Try again later.", Toast.LENGTH_LONG).show();
+
+            }
+        }
+    }
+
+    /**
+     * Represents an asynchronous task used to delete trees from db since last update
+     */
+    public class DeleteTrees extends AsyncTask<Void, Void, Boolean> {
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return checkDB();
+        }
+
+        protected Boolean checkDB() {
+            try {
+                SharedPreferences settings = getSharedPreferences("time", 0);
+                String lastUpdateTime = settings.getString("lastUpdate", null);
+                if (lastUpdateTime == null){
+                    return true;
+                }
+                URL url = new URL(Constants.GET_DELETED_TREES_URL+"?time="+lastUpdateTime.substring(0, 19)+"Z");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "deleted trees status " + " : " + status);
+
+                if (status == 200) {
+                    InputStream is = conn.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String responseString;
+                    StringBuilder sb = new StringBuilder();
+
+                    while ((responseString = reader.readLine()) != null) {
+                        sb = sb.append(responseString);
+                    }
+                    String responseJSON = sb.toString();
+                    Log.d(Constants.TAG, responseJSON);
+                    delete(responseJSON);
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            } catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            } catch (JSONException e) {
+                Log.i(Constants.TAG, "JSON Exception");
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+
+            return false;
+        }
+
+        protected void delete(String responseJSON) throws JSONException{
+            if (responseJSON.equals("{}")){
+                return;
+            }
+            JSONArray data = new JSONArray(responseJSON);
+            MapDbHelper db = new MapDbHelper(getApplicationContext());
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject json_data = data.getJSONObject(i);
+                String tree_id = json_data.getString("tree_id");
+                db.deleteFromTreeID(Integer.parseInt(tree_id));
+            }
+            db.close();
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                setUpDbMarkers();
+            }
+            else {
+                Toast.makeText(MapsActivity.this, "Something went wrong with delete. Try again later.", Toast.LENGTH_LONG).show();
 
             }
         }

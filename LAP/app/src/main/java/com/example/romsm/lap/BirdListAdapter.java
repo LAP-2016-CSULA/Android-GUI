@@ -33,7 +33,7 @@ public class BirdListAdapter extends ArrayAdapter<BirdSpecies> {
 
         Picasso img = Picasso.with(getContext());
         img.setIndicatorsEnabled(true);
-        img.load(bird.getImageURL()).into(treeImg);
+        img.load(bird.getImageURL()).resize(180,150).centerCrop().into(treeImg);
 
         // Return the completed view to render on screen
         return convertView;

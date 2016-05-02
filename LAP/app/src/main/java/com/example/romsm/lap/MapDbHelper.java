@@ -104,6 +104,12 @@ public class MapDbHelper extends SQLiteOpenHelper{
         }
         return null;
     }
+
+    public void deleteFromTreeID(int treeID){
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("delete from " + MapContract.MapEntry.TABLE_NAME + "where "+ MapContract.MapEntry.TREE_ID + " = " + treeID);
+    }
+
     public void clearTable() {
         SQLiteDatabase db = getWritableDatabase();
         db.execSQL("delete from " + MapContract.MapEntry.TABLE_NAME);
