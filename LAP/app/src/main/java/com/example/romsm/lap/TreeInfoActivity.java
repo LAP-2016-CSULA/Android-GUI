@@ -45,7 +45,7 @@ public class TreeInfoActivity extends AppCompatActivity {
 
         treeImage = (ImageView) findViewById(R.id.treeImage);
         Picasso img = Picasso.with(this);
-        img.setIndicatorsEnabled(true);
+        //img.setIndicatorsEnabled(true);
         img.load(tree.getImageURL()).into(treeImage, new com.squareup.picasso.Callback() {
             @Override
             public void onSuccess() {

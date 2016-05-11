@@ -30,7 +30,7 @@ public class TreeSpeciesAdapter extends ArrayAdapter<TreeSpecies> {
         name.setText(species.getName());
 
         Picasso img = Picasso.with(getContext());
-        img.setIndicatorsEnabled(true);
+        //img.setIndicatorsEnabled(true);
         img.load(species.getImageURL()).resize(150,180).centerCrop().into(treeImg);
 
         // Return the completed view to render on screen

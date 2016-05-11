@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -174,10 +175,11 @@ public class UpdateActivity extends AppCompatActivity {
             }
         });
 
-        Button deleteButton = (Button) findViewById(R.id.btDelete);
+        ImageButton deleteButton = (ImageButton) findViewById(R.id.btDelete);
         if (user.getIsGuest()){
             continueButton.setEnabled(false);
             continueButton.setText("Sign-in to update");
+            deleteButton.setEnabled(false);
         }
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -186,7 +188,7 @@ public class UpdateActivity extends AppCompatActivity {
                 i.setType("message/rfc822");
                 i.putExtra(Intent.EXTRA_EMAIL, new String[]{"laphenology@gmail.com"});
                 i.putExtra(Intent.EXTRA_SUBJECT, "subject of email");
-                i.putExtra(Intent.EXTRA_TEXT, "Request to Delete tree ID: " +treeID);
+                i.putExtra(Intent.EXTRA_TEXT, "Request to Delete tree ID: " + treeID);
                 try {
                     startActivity(Intent.createChooser(i, "Send mail..."));
                 } catch (android.content.ActivityNotFoundException ex) {
