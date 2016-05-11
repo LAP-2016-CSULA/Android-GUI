@@ -33,7 +33,7 @@ public class UpdateActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tree_info);
+        setContentView(R.layout.activity_update_email);
         //Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         //setSupportActionBar(myToolbar);
 
@@ -171,6 +171,27 @@ public class UpdateActivity extends AppCompatActivity {
                 questionsIntent.putExtra("tree", tree);
                 questionsIntent.putExtra("booleant", true);
                 startActivity(questionsIntent);
+            }
+        });
+
+        Button deleteButton = (Button) findViewById(R.id.btDelete);
+        if (user.getIsGuest()){
+            continueButton.setEnabled(false);
+            continueButton.setText("Sign-in to update");
+        }
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("message/rfc822");
+                i.putExtra(Intent.EXTRA_EMAIL, new String[]{"laphenology@gmail.com"});
+                i.putExtra(Intent.EXTRA_SUBJECT, "subject of email");
+                i.putExtra(Intent.EXTRA_TEXT, "Request to Delete tree ID: " +treeID);
+                try {
+                    startActivity(Intent.createChooser(i, "Send mail..."));
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(UpdateActivity.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
