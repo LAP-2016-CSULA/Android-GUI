@@ -1,7 +1,8 @@
 package com.example.romsm.lap;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,6 +21,11 @@ import android.widget.Toast;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class UpdateActivity extends AppCompatActivity {
     private TextView treeName, treeSciName, treeDesc;
@@ -184,16 +190,43 @@ public class UpdateActivity extends AppCompatActivity {
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Intent.ACTION_SEND);
-                i.setType("message/rfc822");
-                i.putExtra(Intent.EXTRA_EMAIL, new String[]{"laphenology@gmail.com"});
-                i.putExtra(Intent.EXTRA_SUBJECT, "subject of email");
-                i.putExtra(Intent.EXTRA_TEXT, "Request to Delete tree ID: " + treeID);
-                try {
-                    startActivity(Intent.createChooser(i, "Send mail..."));
-                } catch (android.content.ActivityNotFoundException ex) {
-                    Toast.makeText(UpdateActivity.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(UpdateActivity.this);
+                builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked OK button
+                        if (user.getIsSuperUser()){
+                            new DeleteTreeTask().execute();
+                        }
+                        else if (!user.getIsGuest()) {
+                            Intent i = new Intent(Intent.ACTION_SEND);
+                            i.setType("message/rfc822");
+                            i.putExtra(Intent.EXTRA_EMAIL, new String[]{"laphenology@gmail.com"});
+                            i.putExtra(Intent.EXTRA_SUBJECT, "LAP - Delete Tree Request");
+                            i.putExtra(Intent.EXTRA_TEXT, "Request to Delete tree ID: " + treeID);
+                            try {
+                                startActivity(Intent.createChooser(i, "Send mail..."));
+                            } catch (android.content.ActivityNotFoundException ex) {
+                                Toast.makeText(UpdateActivity.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+                });
+                builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
+                if (user.getIsSuperUser()){
+                    builder.setMessage(R.string.delete_tree)
+                            .setTitle(R.string.app_name);
                 }
+                else{
+                    builder.setMessage(R.string.request_delete_tree)
+                            .setTitle(R.string.app_name);
+                }
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         });
     }
@@ -210,6 +243,57 @@ public class UpdateActivity extends AppCompatActivity {
         protected void onPostExecute(final Boolean success) {
             if (success) {
                 setUpInfo();
+            } else {
+                Toast.makeText(UpdateActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
+            }
+        }
+
+    }
+
+    public class DeleteTreeTask extends AsyncTask<Void, Void, Boolean> {
+
+        HttpURLConnection conn = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                URL url = new URL(Constants.POST_TREE_URL + treeID + "/?access_token="+ user.getAccessToken());
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("DELETE");
+                conn.setDoOutput(false);
+                conn.setDoInput(true);
+
+                conn.connect();
+
+                int status = conn.getResponseCode();
+                Log.d(Constants.TAG, "delete tree status " +" : " + status);
+
+                if (status == 204) {
+                    return true;
+                }
+            }catch (MalformedURLException e){
+                Log.i(Constants.TAG, "Malformed Url");
+                e.printStackTrace();
+                return false;
+            }catch (IOException e) {
+                Log.i(Constants.TAG, "IO Exception");
+                e.printStackTrace();
+                return false;
+            }finally {
+                if (conn != null)
+                    conn.disconnect();
+            }
+
+            return false;
+        }
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                Toast.makeText(UpdateActivity.this, "Tree Deleted", Toast.LENGTH_LONG).show();
+                Intent mapIntent = new Intent(UpdateActivity.this, MapsActivity.class);
+                mapIntent.putExtra("userTokens", user);
+                startActivity(mapIntent);
+                finish();
             } else {
                 Toast.makeText(UpdateActivity.this, "Something went wrong. Try Again", Toast.LENGTH_LONG).show();
             }

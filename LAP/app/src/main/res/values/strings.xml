@@ -21,6 +21,8 @@
 
     <string name="add_tree_here">Add a tree here?</string>
     <string name="add_tree_on_top">Add a tree on top of your location?</string>
+    <string name="delete_tree">Are you sure you want to delete this tree?</string>
+    <string name="request_delete_tree">E-mail LAP admin for request to delete this tree?</string>
     <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
     <string name="title_activity_camera">Camera</string>

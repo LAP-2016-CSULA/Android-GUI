@@ -408,7 +408,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         private Boolean getQuestionsList() {
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("http://isitso.pythonanywhere.com/questions/");
+                URL url = new URL(Constants.GET_QUESTIONS_LIST_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("client_id", Constants.CLIENT_ID);
                 conn.setRequestProperty("client_secret", Constants.CLIENT_SECRET);

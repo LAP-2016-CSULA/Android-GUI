@@ -12,6 +12,7 @@ public class Constants {
     public static final String GET_TREE_SPECIES_URL = "http://isitso.pythonanywhere.com/treespecies/";
     public static final String GET_BIRDS_LIST_URL = "http://isitso.pythonanywhere.com/birds/";
     public static final String GET_DELETED_TREES_URL = "http://isitso.pythonanywhere.com/deletedtrees/";
+    public static final String GET_QUESTIONS_LIST_URL = "http://isitso.pythonanywhere.com/questions/";
 
     public static final String TAG = "mycode";
 }
