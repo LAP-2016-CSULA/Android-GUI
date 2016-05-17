@@ -132,9 +132,11 @@ public class UploadTreeQuestionIntentService extends IntentService {
         try {
             MultipartUtility multipart = new MultipartUtility(Constants.POST_DAILY_UPDATE_URL, charset);
 
-            reduceImageSize(imagePath);
-            File treeFile = new File(imagePath);
-            multipart.addFilePart("image", treeFile);
+            if (imagePath != null){
+                reduceImageSize(imagePath);
+                File treeFile = new File(imagePath);
+                multipart.addFilePart("image", treeFile);
+            }
 
             multipart.addFormField("tree", String.valueOf(treeID));
             Log.d(Constants.TAG, "tree id: " + treeID);

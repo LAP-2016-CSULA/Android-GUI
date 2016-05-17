@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckedTextView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -26,7 +27,7 @@ public class BirdListAdapter extends ArrayAdapter<BirdSpecies> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_bird_species, parent, false);
         }
         // Lookup view for data population
-        TextView name = (TextView) convertView.findViewById(R.id.speciesName);
+        CheckedTextView name = (CheckedTextView) convertView.findViewById(R.id.speciesName);
         ImageView treeImg = (ImageView) convertView.findViewById(R.id.speciesImg);
         // Populate the data into the template view using the data object
         name.setText(bird.getName());
@@ -34,6 +35,8 @@ public class BirdListAdapter extends ArrayAdapter<BirdSpecies> {
         Picasso img = Picasso.with(getContext());
         //img.setIndicatorsEnabled(true);
         img.load(bird.getImageURL()).resize(180,150).centerCrop().into(treeImg);
+
+        name.setChecked(bird.getIsSelected());
 
         // Return the completed view to render on screen
         return convertView;

@@ -63,11 +63,12 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     TextView titleQuestion;
     String mCurrentPhotoPath;
     //questionsList will hold a list of all the questions that are retrieved from the server
-    ArrayList<String> questionsList = new ArrayList<String>();
+    //ArrayList<String> questionsList = new ArrayList<String>();
     //answers will hold the answers to the above questions (probably better to use a map<String, Boolean> instead of two lists)
-    List<Boolean> answers = new ArrayList<>();
+    //List<Boolean> answers = new ArrayList<>();
+    HashMap<TreeQuestion, Boolean> questionMap = new HashMap<>();
     //questions will hold an object of TreeQuestions which we'll use to retrieve the question's ID depending if it's true or false
-    List<TreeQuestion> questions = new ArrayList<>();
+    //List<TreeQuestion> questions = new ArrayList<>();
     //birdMap has all species of birds as key and true/false as value
     HashMap<BirdSpecies, Boolean> birdMap = new HashMap<>();
 
@@ -100,7 +101,16 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         lvBirds = (ListView) findViewById(R.id.birdList);
         progress = (ProgressBar)findViewById(R.id.question_progress);
         titleQuestion = (TextView) findViewById(R.id.titleTextView);
-        btnSubmit.setEnabled(false);
+        if (!user.getIsGuest() && !user.getIsSuperUser() && !user.getIsStaff()){
+            btnSubmit.setEnabled(true);
+        }
+        else if (t && user.getIsSuperUser()){
+            btnSubmit.setEnabled(true);
+        }
+        else{
+            btnSubmit.setEnabled(false);
+        }
+
         if(t && !user.getIsSuperUser()){ //if not admin don't show photo button
             btnPhoto.setVisibility(View.INVISIBLE);
         }
@@ -111,8 +121,8 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     }
 
 
-    private ArrayList<String> jsonToArrayList(String jsonString) throws JSONException {
-        ArrayList<String> questionsList = new ArrayList<String>();
+    private void jsonToArrayList(String jsonString) throws JSONException {
+        //ArrayList<String> questionsList = new ArrayList<String>();
         JSONArray data = new JSONArray(jsonString);
 
         for (int i = 0; i < data.length(); i++) {
@@ -133,10 +143,10 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             }
 
             //Log.d(Constants.TAG, "TRUE ID = " + trueId + " FALSE ID = " + falseId + "TEXT = " + text);
-            questions.add(new TreeQuestion(trueId, falseId, id, text));
-            questionsList.add(text);
+            //questions.add(new TreeQuestion(trueId, falseId, id, text));
+            //questionsList.add(text);
+            questionMap.put(new TreeQuestion(trueId, falseId, id, text), false);
         }
-        return questionsList;
     }
 
     @Override
@@ -169,6 +179,11 @@ public class TreeQuestionsActivity extends AppCompatActivity {
     private void setupListView() {
         setupButton();
         final ListView lv = (ListView) findViewById(R.id.treeQuestionsList);
+        final ArrayList<TreeQuestion> questionsList = new ArrayList<>();
+        for(TreeQuestion qKey : questionMap.keySet()){
+            qKey.setIsSelected(false);
+            questionsList.add(qKey);
+        }
         QuestionListAdapter questionAdapter = new QuestionListAdapter(this, questionsList);
         lv.setAdapter(questionAdapter);
         //lv.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, questionsList));
@@ -177,8 +192,11 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView l, View v, int position, long id) {
                 SparseBooleanArray sparseBooleanArray = lv.getCheckedItemPositions();
-                CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.questionView);
-                ctv.toggle();
+                //CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.questionView);
+                //ctv.toggle();
+                questionsList.get(position).toggleSelected();
+                lv.invalidateViews();
+                questionMap.put(questionsList.get(position), sparseBooleanArray.get(position));
                 Log.d(Constants.TAG, "Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
             }
         });
@@ -188,17 +206,21 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         final ListView blv = (ListView) findViewById(R.id.birdList);
         final ArrayList<BirdSpecies> birdList = new ArrayList<>();
         for(BirdSpecies birdKey : birdMap.keySet()){
+            birdKey.setIsSelected(false);
             birdList.add(birdKey);
         }
+
         BirdListAdapter birdAdapter = new BirdListAdapter(this, birdList);
         blv.setAdapter(birdAdapter);
+        blv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         blv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView l, View v, int position, long id) {
-
                 SparseBooleanArray sparseBooleanArray = blv.getCheckedItemPositions();
-                CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.speciesName);
-                ctv.toggle();
+                birdList.get(position).toggleSelected();
+                blv.invalidateViews();
+                //CheckedTextView ctv = (CheckedTextView) v.findViewById(R.id.speciesName);
+                //ctv.toggle();
                 //Log.d(Constants.TAG, birdList.get(position).getName()+ " Clicked Position := " + position + " Value: " + sparseBooleanArray.get(position));
                 birdMap.put(birdList.get(position), sparseBooleanArray.get(position));
                 Log.d(Constants.TAG, birdList.get(position).getName()+ " Clicked Position := " + birdMap.get(birdList.get(position)));
@@ -226,13 +248,14 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                selection();
-
-                if (mCurrentPhotoPath == null) {
+                //selection();
+                /*if (mCurrentPhotoPath == null && (user.getIsSuperUser() || user.getIsStaff()) ) {
                     Toast.makeText(getApplicationContext(), "Please submit a picture of the tree before you move on",
                             Toast.LENGTH_LONG).show();
+                    return;
+                }*/
 
-                } else if (f == false) {
+                if (f == false) {
                     showProgress(true);
                     Intent UploadIntent = new Intent(TreeQuestionsActivity.this, UploadTreeQuestionIntentService.class);
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_UPDATE, false);
@@ -243,14 +266,16 @@ public class TreeQuestionsActivity extends AppCompatActivity {
 
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_IMG, mCurrentPhotoPath);
 
-                    int[] answerID = new int[questionsList.size()];
-                    for(int i = 0 ; i < questionsList.size() ; i++ ){
-                        if(answers.get(i)){
-                            answerID[i] = questions.get(i).getTrueID();
+                    int[] answerID = new int[questionMap.size()];
+                    int qIter = 0;
+                    for (Map.Entry<TreeQuestion, Boolean> entry : questionMap.entrySet()){
+                        if(entry.getValue()){
+                            answerID[qIter] = entry.getKey().getTrueID();
                         }
                         else{
-                            answerID[i] = questions.get(i).getFalseID();
+                            answerID[qIter] = entry.getKey().getFalseID();
                         }
+                        qIter ++;
                     }
 
                     int birdsID[] = new int[birdMap.size()];
@@ -276,14 +301,16 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_UPDATE, true);
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_IMG, mCurrentPhotoPath);
                     UploadIntent.putExtra(UploadTreeQuestionIntentService.PARAM_IN_TREE, treeID);
-                    int[] answerID = new int[questionsList.size()];
-                    for(int i = 0 ; i < questionsList.size() ; i++ ){
-                        if(answers.get(i)){
-                            answerID[i] = questions.get(i).getTrueID();
+                    int[] answerID = new int[questionMap.size()];
+                    int qIter = 0;
+                    for (Map.Entry<TreeQuestion, Boolean> entry : questionMap.entrySet()){
+                        if(entry.getValue()){
+                            answerID[qIter] = entry.getKey().getTrueID();
                         }
                         else{
-                            answerID[i] = questions.get(i).getFalseID();
+                            answerID[qIter] = entry.getKey().getFalseID();
                         }
+                        qIter ++;
                     }
                     int birdsID[] = new int[birdMap.size()];
                     int birdIter = 0;
@@ -384,6 +411,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     Log.d(Constants.TAG, "PICTURE NOT TAKEN . image deleted?: " + d);
                     btnPhoto.setImageResource(R.drawable.ic_camera_warning);
                     btnSubmit.setEnabled(false);
+                    if (t && user.getIsSuperUser()) {
+                        btnSubmit.setEnabled(true);
+                    }
                 }
                 break;
 
@@ -416,7 +446,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                 conn.connect();
 
                 int status = conn.getResponseCode();
-                Log.d(Constants.TAG, "species status " + status);
+                Log.d(Constants.TAG, "questions status " + status);
 
                 if (status == 200) {
                     InputStream is = conn.getInputStream();
@@ -427,9 +457,9 @@ public class TreeQuestionsActivity extends AppCompatActivity {
                     while ((responseString = reader.readLine()) != null) {
                         sb = sb.append(responseString);
                     }
-                    String speciesListData = sb.toString();
-                    questionsList = jsonToArrayList(speciesListData);
-                    Log.d(Constants.TAG, "speciesJSON: " + speciesListData);
+                    String questionsListData = sb.toString();
+                    jsonToArrayList(questionsListData);
+                    Log.d(Constants.TAG, "questionsJSON: " + questionsListData);
                     return true;
                 }
             } catch (MalformedURLException e) {
@@ -452,6 +482,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
         }
     }
 
+    /*
     public void selection (){
         final ListView lv = (ListView)findViewById(R.id.treeQuestionsList);
         int size = questionsList.size();
@@ -463,7 +494,7 @@ public class TreeQuestionsActivity extends AppCompatActivity {
             Log.i(Constants.TAG, "answers: " + answers.get(i));
         }
 
-    }
+    }*/
 
     public class GetBirdListTask extends AsyncTask<Void, Void, Boolean> {
         String jsonResponse;
