@@ -824,14 +824,13 @@ public class MapsActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(final Boolean success) {
             if (success) {
-                if(isUpToDate(time)) {
+                if( time != "" && isUpToDate(time)) {
                     //setUpDbMarkers();
                     new DeleteTrees().execute();
                 }
                 else{
                     new RetrieveTreesTask().execute();
                 }
-
             } else {
                 Toast.makeText(MapsActivity.this, "Something went wrong. Couldn't update pins. Try again later.", Toast.LENGTH_LONG).show();
 
